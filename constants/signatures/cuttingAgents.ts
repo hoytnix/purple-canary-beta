@@ -1,0 +1,28 @@
+import { ChemicalSignature } from '../../types';
+
+export const CUTTING_AGENTS: ChemicalSignature[] = [
+  { id: "MANNITOL", name: "Mannitol", category: 'BENIGN', rf: 0.05, hex: "#FFFAFA", shift: "STATIC", hazard: "SAFE", desc: "Sugar alcohol. Insoluble in Limonene. Faint white streak at origin." },
+  { id: "INOSITOL", name: "Inositol", category: 'BENIGN', rf: 0.04, hex: "#F0FFF0", shift: "STATIC", hazard: "SAFE", desc: "Vitamin B8 cut. Polar. Low mobility." },
+  { id: "LACTOSE", name: "Lactose", category: 'BENIGN', rf: 0.03, hex: "#FFF5EE", shift: "WEAK_ABSORB", hazard: "SAFE", desc: "Milk sugar. Polar. Dull white spot at origin." },
+  { id: "CAFFEINE", name: "Caffeine Anhydrous", category: 'BENIGN', rf: 0.50, hex: "#E0FFFF", shift: "BLUE_HALO", hazard: "SAFE", desc: "Stimulant cut. Distinct blue-white halo under UV. Soluble in organic solvents." },
+  { id: "PARACETAMOL", name: "Paracetamol", category: 'BENIGN', rf: 0.35, hex: "#2F4F4F", shift: "QUENCHED", hazard: "SAFE", desc: "Painkiller cut. Dark quenching spot." },
+  { id: "ASPIRIN", name: "Aspirin", category: 'BENIGN', rf: 0.40, hex: "#F5F5F5", shift: "FLUORESCENT", hazard: "SAFE", desc: "Salicylate. Bright blue fluorescence under UV." },
+  { id: "IBUPROFEN", name: "Ibuprofen", category: 'BENIGN', rf: 0.85, hex: "#F8F8FF", shift: "STATIC", hazard: "SAFE", desc: "NSAID binder. High Rf movement in organic solvent." },
+  { id: "BAKING_SODA", name: "Sodium Bicarbonate", category: 'BENIGN', rf: 0.02, hex: "#FFFFFF", shift: "STATIC", hazard: "SAFE", desc: "Crack base. White crusty deposit. Insoluble." },
+  { id: "CORNSTARCH", name: "Cornstarch", category: 'BENIGN', rf: 0.01, hex: "#FFF8DC", shift: "CLUMPY", hazard: "SAFE", desc: "Thickening agent. Clumpy texture. Stationary." },
+  { id: "FLOUR", name: "Wheat Flour", category: 'BENIGN', rf: 0.01, hex: "#F5DEB3", shift: "MATTE", hazard: "SAFE", desc: "Organic filler. Matte beige. Stationary." },
+  { id: "CHALK", name: "Chalk (CaCO3)", category: 'BENIGN', rf: 0.01, hex: "#FFFFFF", shift: "STATIC", hazard: "SAFE", desc: "Inert mineral filler. Zero mobility." },
+  { id: "VITAMIN_C", name: "Vitamin C", category: 'BENIGN', rf: 0.06, hex: "#FFFF00", shift: "YELLOW_FADE", hazard: "SAFE", desc: "Ascorbic acid. Polar. Faint yellow low." },
+  { id: "MSM", name: "MSM", category: 'BENIGN', rf: 0.10, hex: "#F0F8FF", shift: "CRYSTAL", hazard: "SAFE", desc: "Joint supplement cut. Low mobility in Limonene." },
+  { id: "CREATINE", name: "Creatine", category: 'BENIGN', rf: 0.05, hex: "#FFFAF0", shift: "GRITTY", hazard: "SAFE", desc: "Gym supplement. Gritty white residue at origin." },
+  { id: "AGMATINE", name: "Agmatine Sulfate", category: 'BENIGN', rf: 0.04, hex: "#F5F5F5", shift: "STATIC", hazard: "SAFE", desc: "Workout supplement. Faint white low." },
+  { id: "XYLITOL", name: "Xylitol", category: 'BENIGN', rf: 0.05, hex: "#F0FFFF", shift: "COOL", hazard: "SAFE", desc: "Artificial sweetener. Polar. Low mobility." },
+  { id: "BENZOCAINE", name: "Benzocaine", category: 'HAZARDS', rf: 0.68, hex: "#E0FFFF", shift: "NUMBING", hazard: "MEDIUM", desc: "Local anesthetic. Soluble in Limonene. Numbing agent cut." },
+  { id: "LIDOCAINE", name: "Lidocaine", category: 'HAZARDS', rf: 0.62, hex: "#E0FFFF", shift: "NUMBING", hazard: "MEDIUM", desc: "Anesthetic. Soluble. Fishscale mimic." },
+  { id: "PROCAINE", name: "Procaine", category: 'HAZARDS', rf: 0.60, hex: "#E6E6FA", shift: "NUMBING", hazard: "MEDIUM", desc: "Novocaine. Common coke cut." },
+  { id: "PHENACETIN", name: "Phenacetin", category: 'HAZARDS', rf: 0.75, hex: "#F5F5F5", shift: "SHINY", hazard: "HIGH", desc: "Carcinogenic painkiller. Shiny flakes." },
+  { id: "LEVAMISOLE", name: "Levamisole", category: 'HAZARDS', rf: 0.12, hex: "#00FFFF", shift: "CYAN_HALO", hazard: "CRITICAL", desc: "Dewormer. Cyan halo. Necrosis risk." },
+  { id: "QUININE", name: "Quinine", category: 'HAZARDS', rf: 0.40, hex: "#00008B", shift: "BLUE_FLUO", hazard: "MEDIUM", desc: "Anti-malarial. Strong blue fluorescence." },
+  { id: "DILTIAZEM", name: "Diltiazem", category: 'HAZARDS', rf: 0.50, hex: "#F0E68C", shift: "STATIC", hazard: "HIGH", desc: "Heart medication cut." },
+  { id: "HYDROXYZINE", name: "Hydroxyzine", category: 'HAZARDS', rf: 0.45, hex: "#D8BFD8", shift: "STATIC", hazard: "MEDIUM", desc: "Antihistamine cut." },
+];

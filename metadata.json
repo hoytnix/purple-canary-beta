@@ -1,0 +1,10 @@
+{
+  "name": "Remix: Purple Canary vβ",
+  "description": "Purple Canary // Forensic Analysis Suite vβ. Modular Architecture. Features: Bayesian Matrix Logic, Spectral Control Lane, Geometric Calibration, and Heavy Metal \u0027Void\u0027 Detection.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

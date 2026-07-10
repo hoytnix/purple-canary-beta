@@ -1,0 +1,30 @@
+{
+  "name": "purple-canary-beta",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.11.0",
+    "@tensorflow/tfjs": "4.17.0",
+    "@tensorflow/tfjs-backend-wasm": "4.17.0",
+    "express": "^5.2.1",
+    "firebase": "^12.15.0",
+    "jspdf": "2.5.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "esbuild": "^0.28.1",
+    "tsx": "^4.23.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

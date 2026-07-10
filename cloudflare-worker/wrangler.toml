@@ -1,0 +1,8 @@
+name = "purple-canary-edge-analysis"
+main = "src/index.ts"
+compatibility_date = "2024-03-01"
+
+[vars]
+# You can define public variables here if needed
+
+# Secrets (like GEMINI_API_KEY) are securely bound via wrangler secret put GEMINI_API_KEY
