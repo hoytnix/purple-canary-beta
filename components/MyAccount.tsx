@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ScanRecord } from '../types';
-import { subscribeScanRecords, getUserProfile, saveUserProfile, UserProfile } from '../services/firestoreService';
+import { subscribeScanRecords, getUserProfile, UserProfile } from '../services/scanService';
 import { getOrCreateIdentity, getStoredPublicKey, syncIdentityToServer } from '../services/identity';
 import { CheckoutWizard } from './CheckoutWizard';
 import { AuthStatusWidget } from './AuthStatusWidget';
@@ -47,7 +47,7 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
         if (p.shippingCity) localStorage.setItem('pc_shipping_city', p.shippingCity);
         if (p.shippingZip) localStorage.setItem('pc_shipping_zip', p.shippingZip);
       } else {
-        // Initialize user profile in TursoDB
+        // Initialize local profile state only (do NOT prematurely insert row into DB)
         const initProfile: UserProfile = {
           publicKey: publicKey,
           username: 'Shaggy',
@@ -59,7 +59,6 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
           shippingZip: localStorage.getItem('pc_shipping_zip') || ''
         };
         setProfile(initProfile);
-        await saveUserProfile(initProfile);
       }
     };
 

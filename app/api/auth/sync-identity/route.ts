@@ -106,9 +106,10 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Update last_login only when user already exists
+      // Update last_login and tier if provided
       await dbService.upsertUser({
         publicKey,
+        ...(tier ? { tier } : {}),
         lastLogin: new Date().toISOString(),
       });
 

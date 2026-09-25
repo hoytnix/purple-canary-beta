@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
           await dbService.upsertUser({
             publicKey: userId,
             tier: 'unlimited',
-            ...(meta.privateKeyHash && !existingUser.privateKeyHash && { privateKeyHash: meta.privateKeyHash }),
+            ...(meta.privateKeyHash ? { privateKeyHash: meta.privateKeyHash } : {}),
             ...(meta.shippingName && { shippingName: meta.shippingName }),
             ...(meta.shippingAddress && { shippingAddress: meta.shippingAddress }),
             ...(meta.shippingCity && { shippingCity: meta.shippingCity }),

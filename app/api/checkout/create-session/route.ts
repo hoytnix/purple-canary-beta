@@ -19,7 +19,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { userId, privateKey, priceId, amount, productName, metadata } = body;
 
-    const saltedHash = privateKey ? hashPrivateKey(privateKey) : undefined;
+    let saltedHash = privateKey ? hashPrivateKey(privateKey) : undefined;
+    if (!saltedHash && userId) {
+      try {
+        const { dbService } = await import('@/services/dbService');
+        const existing = await dbService.getUser(userId);
+        if (existing?.privateKeyHash) {
+          saltedHash = existing.privateKeyHash;
+        }
+      } catch {
+        // Continue with available metadata
+      }
+    }
     const sessionMetadata: Record<string, string> = {
       ...(metadata || {}),
       ...(saltedHash ? { privateKeyHash: saltedHash } : {}),

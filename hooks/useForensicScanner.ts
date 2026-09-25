@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { performSpectralAnalysis } from '../services/analysisService';
 import { checkIsTLCPaper } from '../services/cvService';
 import { Detection, ValidationError, SystemStatus, ScanContext, SolventType, FilterMaterial, MatrixType, GeminiAnalysisResult } from '../types';
-import { saveScanRecord } from '../services/firestoreService';
+import { saveScanRecord } from '../services/scanService';
 import { getOrCreateIdentity } from '../services/identity';
 
 export const useForensicScanner = () => {

@@ -1,5 +1,5 @@
 
-import { getScanRecords } from './services/firestoreService';
+import { getScanRecords } from './services/scanService';
 import { getOrCreateIdentity } from './services/identity';
 
 async function verify() {

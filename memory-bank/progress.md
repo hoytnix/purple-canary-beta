@@ -42,6 +42,11 @@
 - [x] Ensured user rows are inserted only if they do not already exist (`AND ONLY IF IT DOESN'T EXIST`), updating tier and shipping metadata when returning users complete transactions.
 - [x] Streamlined `CheckoutWizard.tsx` and `App.tsx` by eliminating redundant mount synchronization and step-triggered DB queries.
 - [x] Preserved salted private key hash during Stripe Checkout: attached hash to Stripe metadata in `create-session`, persisted in `webhook/stripe` and `verify-session`, and guaranteed post-checkout sync in `App.tsx`.
+- [x] Completely removed legacy `firestoreService.ts` and transitioned all scan subscriptions and profile reading to `services/scanService.ts`.
+- [x] Eliminated premature profile inserts on account modal load in `MyAccount.tsx`.
+- [x] Deprecated unauthenticated `POST /api/users` endpoint to protect user table integrity.
+- [x] Enforced strict `SALT:HASH` format for all `users.private_key_hash` database columns in live TursoDB.
+
 
 
 

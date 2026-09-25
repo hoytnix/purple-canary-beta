@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CONTINENTS } from '../constants/index';
-import { saveUserProfile, getUserProfile, UserProfile } from '../services/firestoreService';
+import { getUserProfile, UserProfile } from '../services/scanService';
 import { getOrCreateIdentity, rotateIdentity, syncIdentityToServer, validateKeyPair } from '../services/identity';
 
 interface CheckoutWizardProps {
@@ -273,12 +273,13 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
       localStorage.setItem('pc_user_tier', selectedPlan);
 
       const total = calculateTotal();
+      const activePrivKey = privateKey || (typeof window !== 'undefined' ? localStorage.getItem('pc_private_key') : '') || '';
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: publicKey,
-          privateKey,
+          privateKey: activePrivKey,
           priceId: 'price_XXXXX', // Stripe Price ID
           amount: total,
           productName: addHardwareKit

@@ -3,7 +3,7 @@ import { CheckoutWizard } from './CheckoutWizard';
 import { LoginOverlay } from './LoginOverlay';
 import { PrivacyPolicy } from './PrivacyPolicy';
 import { CONTINENTS } from '../constants/index';
-import { subscribeAllLatestScanRecords } from '../services/firestoreService';
+import { subscribeAllLatestScanRecords } from '../services/scanService';
 
 const getContinentForLocation = (location: string) => {
   const locUpper = (location || '').toUpperCase();

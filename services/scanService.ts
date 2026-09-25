@@ -11,8 +11,10 @@ export interface UserProfile {
   shippingZip?: string;
 }
 
-// Save a new scan record to TursoDB via API
-export async function saveScanRecord(publicKey: string, scan: Omit<ScanRecord, 'id'>) {
+/**
+ * Saves a new scan record to TursoDB via API.
+ */
+export async function saveScanRecord(publicKey: string, scan: Omit<ScanRecord, 'id'>): Promise<string | null> {
   try {
     const scanId = 'scan_' + Math.random().toString(36).substring(2, 9);
     const res = await fetch('/api/scans', {
@@ -37,7 +39,9 @@ export async function saveScanRecord(publicKey: string, scan: Omit<ScanRecord, '
   }
 }
 
-// Fetch scan records for a publicKey from TursoDB
+/**
+ * Fetches scan records for a publicKey from TursoDB.
+ */
 export async function getScanRecords(publicKey: string): Promise<ScanRecord[]> {
   try {
     const res = await fetch(`/api/scans?userId=${encodeURIComponent(publicKey)}`);
@@ -50,8 +54,10 @@ export async function getScanRecords(publicKey: string): Promise<ScanRecord[]> {
   }
 }
 
-// Fetch scan records once (no periodic polling)
-export function subscribeScanRecords(publicKey: string, callback: (records: ScanRecord[]) => void) {
+/**
+ * Fetches scan records once on mount (no periodic polling).
+ */
+export function subscribeScanRecords(publicKey: string, callback: (records: ScanRecord[]) => void): () => void {
   let isSubscribed = true;
 
   const fetchRecords = async () => {
@@ -73,11 +79,13 @@ export function subscribeScanRecords(publicKey: string, callback: (records: Scan
   };
 }
 
-// Fetch latest scan records across the network once per page load (NO periodic polling)
+/**
+ * Fetches latest scan records across the network once per page load (no periodic polling).
+ */
 export function subscribeAllLatestScanRecords(
   callback: (data: { items: any[]; totalScans: number; uniquePublicKeys: number }) => void,
   limitCount: number = 30
-) {
+): () => void {
   let isSubscribed = true;
 
   const fetchLatest = async () => {
@@ -100,34 +108,16 @@ export function subscribeAllLatestScanRecords(
   };
 }
 
-export async function saveUserProfile(profile: UserProfile): Promise<void> {
-  try {
-    await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: profile.publicKey,
-        username: profile.username,
-        tier: profile.tier,
-        access: profile.access,
-        shippingName: profile.shippingName,
-        shippingAddress: profile.shippingAddress,
-        shippingCity: profile.shippingCity,
-        shippingZip: profile.shippingZip,
-      }),
-    });
-  } catch (e) {
-    console.error('Failed to save user profile:', e);
-  }
-}
-
+/**
+ * Fetches user profile from TursoDB without inserting uncommitted rows.
+ */
 export async function getUserProfile(publicKey: string): Promise<UserProfile | null> {
   try {
     const res = await fetch(`/api/users/${encodeURIComponent(publicKey)}`);
     if (!res.ok) return null;
     const user = await res.json();
     return {
-      publicKey: user.id,
+      publicKey: user.id || user.publicKey,
       username: user.username || 'Shaggy',
       tier: user.tier || 'free',
       access: user.access || 'Alpha',
@@ -142,6 +132,9 @@ export async function getUserProfile(publicKey: string): Promise<UserProfile | n
   }
 }
 
+/**
+ * Seeds demo scans if none exist.
+ */
 export async function seedScansIfEmpty(): Promise<void> {
   try {
     await fetch('/api/scans/seed', { method: 'POST' });
