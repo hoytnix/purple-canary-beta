@@ -248,6 +248,7 @@ export const useForensicScanner = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setDetections(mockDetections); 
       setGeminiAnalysis({
+        isTLCPaper: true,
         confidenceScores: [
           { category: "Test Organic Standard", score: 95, rationale: "Aligned exactly with standard calibration marker Rf 0.5." },
           { category: "Banned Adulterants", score: 0, rationale: "No secondary quenching fronts observed." }

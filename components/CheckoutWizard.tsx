@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CONTINENTS } from '../constants/index';
-import { saveUserProfile } from '../services/firestoreService';
+import { saveUserProfile, UserProfile } from '../services/firestoreService';
 import { getOrCreateIdentity, generatePublicKey } from '../services/identity';
 
 interface CheckoutWizardProps {
@@ -33,6 +33,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'unlimited'>('unlimited');
   const [addHardwareKit, setAddHardwareKit] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
 
   const [shippingName, setShippingName] = useState(() => localStorage.getItem('pc_shipping_name') || '');
   const [shippingAddress, setShippingAddress] = useState(() => localStorage.getItem('pc_shipping_address') || '');
@@ -121,27 +122,51 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     }
   };
 
-  const handlePayment = () => {
+  const handleStripeCheckout = async () => {
     setIsProcessing(true);
-    localStorage.setItem('pc_user_tier', selectedPlan);
-    
-    const userProfile: UserProfile = {
-      publicKey: email,
-      username: 'Shaggy',
-      tier: selectedPlan,
-      access: 'Alpha',
-      shippingName: addHardwareKit ? shippingName : '',
-      shippingAddress: addHardwareKit ? shippingAddress : '',
-      shippingCity: addHardwareKit ? shippingCity : '',
-      shippingZip: addHardwareKit ? shippingZip : ''
-    };
-    
-    saveUserProfile(userProfile).catch(console.error);
+    setStripeError(null);
+    try {
+      localStorage.setItem('pc_user_tier', selectedPlan);
+      
+      const userProfile: UserProfile = {
+        publicKey: email,
+        username: 'Shaggy',
+        tier: selectedPlan,
+        access: 'Alpha',
+        shippingName: addHardwareKit ? shippingName : '',
+        shippingAddress: addHardwareKit ? shippingAddress : '',
+        shippingCity: addHardwareKit ? shippingCity : '',
+        shippingZip: addHardwareKit ? shippingZip : ''
+      };
+      
+      await saveUserProfile(userProfile);
 
-    setTimeout(() => {
-        setIsProcessing(false);
-        onComplete();
-    }, 2000);
+      const total = calculateTotal();
+      const res = await fetch('/api/checkout/create-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: email,
+          priceId: 'price_XXXXX', // Stripe Price ID
+          amount: total,
+          productName: addHardwareKit
+            ? `Purple Canary Pro License + Hardware Kit ($${total.toFixed(2)})`
+            : `Purple Canary Pro License ($${total.toFixed(2)})`,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+    } catch (err: any) {
+      console.error('Checkout failed', err);
+      setStripeError(err?.message || 'Checkout failed. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const isShippingValid = !addHardwareKit || (shippingName.trim() && shippingAddress.trim() && shippingCity.trim() && shippingZip.trim());
@@ -436,13 +461,13 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
             </div>
         )}
 
-        {/* --- STEP 4 (PAYMENT INSTRUCTIONS) --- */}
+        {/* --- STEP 4 (STRIPE CHECKOUT) --- */}
         {step === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 pt-4">
                 <div className="text-center pt-2">
-                <h2 className="text-lg font-bold text-white">Manual Payment.</h2>
+                <h2 className="text-lg font-bold text-white">Stripe Secure Checkout</h2>
                 <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
-                    <span className="material-symbols-rounded text-[12px]">payments</span> Send payment to activate
+                    <span className="material-symbols-rounded text-[12px]">lock</span> Encrypted 256-bit payment gateway
                 </p>
                 </div>
 
@@ -455,50 +480,37 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
 
                 <div className="space-y-3 bg-white/5 border border-white/10 rounded-xl p-4 animate-in fade-in">
                     <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5">
-                        <span className="material-symbols-rounded text-[14px] text-neon-cyan">payments</span>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Payment Accounts</span>
+                        <span className="material-symbols-rounded text-[14px] text-neon-cyan">credit_card</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-white">Payment Method</span>
                     </div>
                     <p className="text-[10px] text-gray-300 leading-relaxed font-mono">
-                      To complete your purchase, please send the total amount of <strong className="text-neon-cyan">${calculateTotal().toFixed(2)}</strong> to either of the following accounts:
+                      Pay securely with Credit / Debit Card, Apple Pay, or Google Pay via Stripe. Your license will activate immediately upon checkout completion.
                     </p>
-                    <div className="space-y-2 pt-1">
-                        <div className="flex items-center justify-between bg-[#1a052b]/60 border border-white/5 rounded-lg p-2.5">
-                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1">
-                              <span className="material-symbols-rounded text-[14px]">attach_money</span> Cash App (Cashtag)
-                            </span>
-                            <span className="text-xs font-mono font-black text-white select-all bg-white/5 px-2 py-1 rounded border border-white/10">$mroloty</span>
-                        </div>
-                        <div className="flex items-center justify-between bg-[#1a052b]/60 border border-white/5 rounded-lg p-2.5">
-                            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                              <span className="material-symbols-rounded text-[14px]">account_balance_wallet</span> Venmo
-                            </span>
-                            <span className="text-xs font-mono font-black text-white select-all bg-white/5 px-2 py-1 rounded border border-white/10">$mralembic</span>
-                        </div>
-                    </div>
                     
-                    {addHardwareKit ? (
-                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-[9px] text-amber-200 font-mono leading-tight flex items-start gap-2">
-                        <span className="material-symbols-rounded text-amber-400 text-sm shrink-0">warning</span>
+                    {addHardwareKit && (
+                      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-[9px] text-emerald-200 font-mono leading-tight flex items-start gap-2">
+                        <span className="material-symbols-rounded text-emerald-400 text-sm shrink-0">local_shipping</span>
                         <div>
-                          <strong className="text-amber-400">REQUIRED MEMO WARNING:</strong> Please include your <strong>Shipping Info</strong> (Name: {shippingName || "[Missing]"}, ZIP: {shippingZip || "[Missing]"}) in the payment note/memo. This is required to dispatch your physical hardware kit.
+                          <strong>SHIPPING DESTINATION:</strong> {shippingName}, {shippingAddress}, {shippingCity} {shippingZip}
                         </div>
                       </div>
-                    ) : (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-[9px] text-blue-200 font-mono leading-tight flex items-start gap-2">
-                        <span className="material-symbols-rounded text-blue-400 text-sm shrink-0">info</span>
-                        <div>
-                          <strong>MEMO INSTRUCTION:</strong> Please include your <strong>Identity Public Key</strong> (<span className="text-neon-cyan select-all bg-white/5 px-1 rounded font-bold break-all">{email}</span>) in the payment memo. Your license will be provisioned instantly.
-                        </div>
+                    )}
+
+                    {stripeError && (
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-[9px] text-red-200 font-mono leading-tight flex items-start gap-2">
+                        <span className="material-symbols-rounded text-red-400 text-sm shrink-0">error</span>
+                        <div>{stripeError}</div>
                       </div>
                     )}
                 </div>
 
                 <button 
-                onClick={handlePayment}
-                disabled={isProcessing}
-                className="w-full py-4 bg-gradient-to-r from-neon-cyan to-blue-500 text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  onClick={handleStripeCheckout}
+                  disabled={isProcessing}
+                  className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
                 >
-                {isProcessing ? "Activating..." : "I Have Sent Payment / Activate"}
+                  <span className="material-symbols-rounded text-[18px]">credit_card</span>
+                  {isProcessing ? 'Redirecting to Stripe...' : 'Pay with Card or Apple/Google Pay'}
                 </button>
             </div>
         )}

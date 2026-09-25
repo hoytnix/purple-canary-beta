@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { SOPTutorial } from './components/SOPTutorial';
 import { SignatureLibrary } from './components/SignatureLibrary';

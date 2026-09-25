@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { useCamera } from '../hooks/useCamera';
 import { useForensicScanner } from '../hooks/useForensicScanner';

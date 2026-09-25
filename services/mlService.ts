@@ -72,7 +72,7 @@ export const runSpectralInference = async (imageData: ImageData): Promise<Tensor
   await initTFBackend();
 
   // Use tf.tidy to automatically clean up intermediate tensors and prevent memory leaks
-  return tf.tidy(() => {
+  return (tf.tidy<any>(() => {
     // 1. Ingest Image as Tensor [Height, Width, Depth]
     const pixels = tf.browser.fromPixels(imageData);
     const h = pixels.shape[0];
@@ -188,7 +188,7 @@ export const runSpectralInference = async (imageData: ImageData): Promise<Tensor
     }
 
     return blobs;
-  });
+  }) as unknown as TensorBlob[]);
 };
 
 /**
