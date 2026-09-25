@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { ScanRecord } from '../types';
 import { subscribeScanRecords, getUserProfile, saveUserProfile, UserProfile } from '../services/firestoreService';
-import { getOrCreateIdentity } from '../services/identity';
+import { getOrCreateIdentity, getStoredPublicKey, syncIdentityToServer } from '../services/identity';
 import { CheckoutWizard } from './CheckoutWizard';
+import { AuthStatusWidget } from './AuthStatusWidget';
 
 interface MyAccountProps {
   onClose: () => void;
@@ -17,16 +18,24 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
   const [cloudScans, setCloudScans] = useState<ScanRecord[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
-
-  const publicKey = getOrCreateIdentity();
+  const [publicKey, setPublicKey] = useState<string>(() => getStoredPublicKey() || '');
 
   useEffect(() => {
+    getOrCreateIdentity().then((identity) => {
+      setPublicKey(identity.publicKey);
+      syncIdentityToServer(identity).catch((err) => console.error('Identity sync error:', err));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!publicKey) return;
+
     // 1. Subscribe to Scan Records in real-time
     const unsubscribe = subscribeScanRecords(publicKey, (records) => {
       setCloudScans(records);
     });
 
-    // 2. Load User Profile from Firestore
+    // 2. Load User Profile from backend
     const loadProfile = async () => {
       const p = await getUserProfile(publicKey);
       if (p) {
@@ -38,7 +47,7 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
         if (p.shippingCity) localStorage.setItem('pc_shipping_city', p.shippingCity);
         if (p.shippingZip) localStorage.setItem('pc_shipping_zip', p.shippingZip);
       } else {
-        // Initialize user profile in Firestore
+        // Initialize user profile in TursoDB
         const initProfile: UserProfile = {
           publicKey: publicKey,
           username: 'Shaggy',
@@ -161,6 +170,9 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
                       </div>
                   </div>
               </div>
+
+              {/* Asymmetric Authentication & Keypair Status */}
+              <AuthStatusWidget />
 
               {/* Stats Grid */}
               <div className="grid grid-cols-2 gap-4">

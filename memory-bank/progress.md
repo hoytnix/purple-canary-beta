@@ -26,6 +26,12 @@
 - [x] Integrated client-side canvas color extraction and Rf spot analysis (`services/cvService.ts`, `services/matchingService.ts`, `services/colorimetry.ts`).
 - [x] Provided client-side PDF forensic reporting via `services/exportService.ts`.
 
+### 5. Secure Asymmetric Keypair Authentication
+- [x] Implemented ECDSA P-256 keypair generation via native `window.crypto.subtle` in `services/identity.ts` without plaintext network exposure.
+- [x] Modernized TursoDB schema and Drizzle ORM models with `public_key TEXT PRIMARY KEY`, `nonce INTEGER DEFAULT 0`, and `last_login DATETIME`.
+- [x] Created Route Handler `app/api/auth/sync-identity/route.ts` for challenge-response signature verification with replay attack mitigation and dual IEEE P1363 / ASN.1 DER verification.
+- [x] Created `AuthStatusWidget.tsx` and integrated it across Homepage Hero, Checkout Wizard, and My Account modal.
+
 ---
 
 ## Active & In-Progress Work

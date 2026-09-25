@@ -3,9 +3,9 @@ import { getScanRecords } from './services/firestoreService';
 import { getOrCreateIdentity } from './services/identity';
 
 async function verify() {
-  const email = getOrCreateIdentity();
-  console.log('Verifying scans for:', email);
-  const records = await getScanRecords(email);
+  const { publicKey } = await getOrCreateIdentity();
+  console.log('Verifying scans for:', publicKey);
+  const records = await getScanRecords(publicKey);
   console.log('Records found:', records.length);
   if (records.length > 0) {
     console.log('First record:', records[0]);

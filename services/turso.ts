@@ -14,10 +14,46 @@ export const turso = createClient({
 export const db = drizzle(turso, { schema });
 
 export async function initDatabase(): Promise<void> {
+  // Check if legacy users table exists with 'id' instead of 'public_key'
+  try {
+    const tableInfo = await turso.execute(`PRAGMA table_info(users)`);
+    const cols = tableInfo.rows.map((r: any) => r.name);
+    if (cols.includes('id') && !cols.includes('public_key')) {
+      await turso.execute(`PRAGMA foreign_keys = OFF;`);
+      await turso.execute(`
+        CREATE TABLE IF NOT EXISTS users_v2 (
+          public_key TEXT PRIMARY KEY,
+          nonce INTEGER DEFAULT 0,
+          stripe_customer_id TEXT,
+          subscription_status TEXT DEFAULT 'inactive',
+          credits INTEGER DEFAULT 0,
+          username TEXT DEFAULT 'Shaggy',
+          tier TEXT DEFAULT 'free',
+          access TEXT DEFAULT 'Alpha',
+          shipping_name TEXT,
+          shipping_address TEXT,
+          shipping_city TEXT,
+          shipping_zip TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_login DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await turso.execute(`
+        INSERT OR IGNORE INTO users_v2 (public_key, stripe_customer_id, subscription_status, credits, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, last_login)
+        SELECT id, stripe_customer_id, subscription_status, credits, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, created_at FROM users;
+      `);
+      await turso.execute(`DROP TABLE users;`);
+      await turso.execute(`ALTER TABLE users_v2 RENAME TO users;`);
+      await turso.execute(`PRAGMA foreign_keys = ON;`);
+    }
+  } catch {
+    // Proceed if table doesn't exist yet
+  }
+
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT UNIQUE,
+      public_key TEXT PRIMARY KEY,
+      nonce INTEGER DEFAULT 0,
       stripe_customer_id TEXT,
       subscription_status TEXT DEFAULT 'inactive',
       credits INTEGER DEFAULT 0,
@@ -28,7 +64,8 @@ export async function initDatabase(): Promise<void> {
       shipping_address TEXT,
       shipping_city TEXT,
       shipping_zip TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_login DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
@@ -39,7 +76,7 @@ export async function initDatabase(): Promise<void> {
       substance_name TEXT,
       result_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(public_key)
     );
   `);
 
@@ -52,7 +89,7 @@ export async function initDatabase(): Promise<void> {
       currency TEXT DEFAULT 'usd',
       status TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(public_key)
     );
   `);
 
@@ -65,7 +102,7 @@ export async function initDatabase(): Promise<void> {
       price_id TEXT,
       current_period_end TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(public_key)
     );
   `);
 }

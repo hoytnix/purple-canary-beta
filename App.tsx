@@ -13,7 +13,7 @@ import { PhaseSelection } from './components/workflow/PhaseSelection';
 import { PhaseCapture } from './components/workflow/PhaseCapture';
 import { PhaseAnalysis } from './components/workflow/PhaseAnalysis';
 import { PhaseReport } from './components/workflow/PhaseReport';
-import { getOrCreateIdentity } from './services/identity';
+import { getOrCreateIdentity, syncIdentityToServer } from './services/identity';
 import { seedScansIfEmpty } from './services/firestoreService';
 
 type ViewState = 'LANDING' | 'WORKFLOW';
@@ -32,7 +32,9 @@ export const WorkflowEngine: React.FC<WorkflowEngineProps> = ({ initialView = 'L
   const { resetScan } = useScanner();
 
   useEffect(() => {
-    getOrCreateIdentity();
+    getOrCreateIdentity().then((identity) => {
+      syncIdentityToServer(identity).catch((err) => console.error('Identity sync error:', err));
+    });
     seedScansIfEmpty().catch(err => console.error('Seeding error:', err));
 
     // Handle payment return parameters

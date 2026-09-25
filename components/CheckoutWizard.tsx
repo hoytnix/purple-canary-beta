@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { CONTINENTS } from '../constants/index';
 import { saveUserProfile, UserProfile } from '../services/firestoreService';
-import { getOrCreateIdentity, generatePublicKey } from '../services/identity';
+import { getOrCreateIdentity, rotateIdentity, syncIdentityToServer } from '../services/identity';
 
 interface CheckoutWizardProps {
   onComplete: () => void;
@@ -58,8 +58,10 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
 
   // Step 1: Persistence for Email & Country
   useEffect(() => {
-    const savedEmail = getOrCreateIdentity();
-    setEmail(savedEmail);
+    getOrCreateIdentity().then((identity) => {
+      setEmail(identity.publicKey);
+      syncIdentityToServer(identity).catch((err) => console.error('Sync identity error:', err));
+    });
     const savedCountry = localStorage.getItem('pc_onboarding_country') || 'US';
     setCountry(savedCountry);
     localStorage.setItem('pc_onboarding_country', savedCountry);
@@ -68,6 +70,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setEmail(val);
+    localStorage.setItem('pc_public_key', val);
     localStorage.setItem('pc_onboarding_email', val);
   };
 
@@ -75,19 +78,19 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     const val = e.target.value;
     setCountry(val);
     localStorage.setItem('pc_onboarding_country', val);
-  }
+  };
 
-  const handleRotateIdentity = () => {
-    const newIdentity = generatePublicKey();
-    setEmail(newIdentity);
-    localStorage.setItem('pc_onboarding_email', newIdentity);
+  const handleRotateIdentity = async () => {
+    const newIdentity = await rotateIdentity();
+    setEmail(newIdentity.publicKey);
+    await syncIdentityToServer(newIdentity).catch(console.error);
     // Clear user cache-specific settings except country
     localStorage.removeItem('pc_user_tier');
     localStorage.removeItem('pc_shipping_name');
     localStorage.removeItem('pc_shipping_address');
     localStorage.removeItem('pc_shipping_city');
     localStorage.removeItem('pc_shipping_zip');
-    // Reload window or dispatch event to refresh state globally
+    // Dispatch event to refresh state globally
     window.dispatchEvent(new Event('storage'));
   };
 

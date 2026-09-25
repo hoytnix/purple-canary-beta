@@ -187,7 +187,8 @@ export const useForensicScanner = () => {
       setStatus('SYSTEM_READY'); 
       
       // Save to Firebase Firestore
-      const publicKey = getOrCreateIdentity();
+      const identity = await getOrCreateIdentity();
+      const publicKey = identity.publicKey;
       const isLethal = results.some(r => r.hazard === 'LETHAL');
       const isRisky = results.some(r => ['HIGH', 'CRITICAL', 'MEDIUM'].includes(r.hazard));
       const verdict = isLethal ? 'LETHAL' : isRisky ? 'HIGH RISK' : 'CLEAN';
@@ -264,8 +265,9 @@ export const useForensicScanner = () => {
       setIsGeminiLoading(false);
       setStatus('SYSTEM_READY'); 
 
-      // Save to Firebase Firestore
-      const publicKey = getOrCreateIdentity();
+      // Save scan record
+      const identity = await getOrCreateIdentity();
+      const publicKey = identity.publicKey;
       saveScanRecord(publicKey, {
         date: new Date().toISOString().split('T')[0],
         location: 'Simulated Environment',

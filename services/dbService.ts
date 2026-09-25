@@ -3,8 +3,9 @@ import { users, scans, transactions, subscriptions } from './schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
 export interface UserRecord {
-  id: string;
-  email?: string;
+  publicKey: string;
+  id?: string;
+  nonce?: number;
   stripeCustomerId?: string;
   subscriptionStatus: string;
   credits: number;
@@ -15,6 +16,8 @@ export interface UserRecord {
   shippingAddress?: string;
   shippingCity?: string;
   shippingZip?: string;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export const dbService = {
@@ -22,14 +25,15 @@ export const dbService = {
     await initDatabase();
   },
 
-  async getUser(id: string): Promise<UserRecord | null> {
+  async getUser(publicKeyOrId: string): Promise<UserRecord | null> {
     await initDatabase();
-    const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const rows = await db.select().from(users).where(eq(users.publicKey, publicKeyOrId)).limit(1);
     if (rows.length === 0) return null;
     const row = rows[0];
     return {
-      id: row.id,
-      email: row.email ?? undefined,
+      publicKey: row.publicKey,
+      id: row.publicKey,
+      nonce: Number(row.nonce ?? 0),
       stripeCustomerId: row.stripeCustomerId ?? undefined,
       subscriptionStatus: row.subscriptionStatus ?? 'inactive',
       credits: Number(row.credits ?? 0),
@@ -40,16 +44,20 @@ export const dbService = {
       shippingAddress: row.shippingAddress ?? undefined,
       shippingCity: row.shippingCity ?? undefined,
       shippingZip: row.shippingZip ?? undefined,
+      createdAt: row.createdAt ?? undefined,
+      lastLogin: row.lastLogin ?? undefined,
     };
   },
 
-  async upsertUser(user: Partial<UserRecord> & { id: string }): Promise<void> {
+  async upsertUser(user: Partial<UserRecord> & { publicKey?: string; id?: string }): Promise<void> {
     await initDatabase();
+    const key = user.publicKey || user.id;
+    if (!key) throw new Error('Missing publicKey or id for user');
     await db
       .insert(users)
       .values({
-        id: user.id,
-        email: user.email ?? null,
+        publicKey: key,
+        nonce: user.nonce ?? 0,
         stripeCustomerId: user.stripeCustomerId ?? null,
         subscriptionStatus: user.subscriptionStatus ?? 'inactive',
         credits: user.credits ?? 0,
@@ -62,9 +70,9 @@ export const dbService = {
         shippingZip: user.shippingZip ?? null,
       })
       .onConflictDoUpdate({
-        target: users.id,
+        target: users.publicKey,
         set: {
-          ...(user.email !== undefined && { email: user.email }),
+          ...(user.nonce !== undefined && { nonce: user.nonce }),
           ...(user.stripeCustomerId !== undefined && { stripeCustomerId: user.stripeCustomerId }),
           ...(user.subscriptionStatus !== undefined && { subscriptionStatus: user.subscriptionStatus }),
           ...(user.credits !== undefined && { credits: user.credits }),
@@ -75,6 +83,7 @@ export const dbService = {
           ...(user.shippingAddress !== undefined && { shippingAddress: user.shippingAddress }),
           ...(user.shippingCity !== undefined && { shippingCity: user.shippingCity }),
           ...(user.shippingZip !== undefined && { shippingZip: user.shippingZip }),
+          ...(user.lastLogin !== undefined && { lastLogin: user.lastLogin }),
         },
       });
   },
@@ -85,8 +94,7 @@ export const dbService = {
     await db
       .insert(users)
       .values({
-        id: scan.userId,
-        email: scan.userId.includes('@') ? scan.userId : null,
+        publicKey: scan.userId,
       })
       .onConflictDoNothing();
 
@@ -169,8 +177,7 @@ export const dbService = {
     await db
       .insert(users)
       .values({
-        id: tx.userId,
-        email: tx.userId.includes('@') ? tx.userId : null,
+        publicKey: tx.userId,
       })
       .onConflictDoNothing();
 

@@ -2,8 +2,8 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
-  id: text('id').primaryKey(),
-  email: text('email').unique(),
+  publicKey: text('public_key').primaryKey(),
+  nonce: integer('nonce').default(0),
   stripeCustomerId: text('stripe_customer_id'),
   subscriptionStatus: text('subscription_status').default('inactive'),
   credits: integer('credits').default(0),
@@ -15,6 +15,7 @@ export const users = sqliteTable('users', {
   shippingCity: text('shipping_city'),
   shippingZip: text('shipping_zip'),
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`),
+  lastLogin: text('last_login').default(sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const scans = sqliteTable('scans', {

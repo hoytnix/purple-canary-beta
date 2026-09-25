@@ -1,7 +1,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { getOrCreateIdentity } from '../services/identity';
+import { getOrCreateIdentity, syncIdentityToServer } from '../services/identity';
 
 interface LoginOverlayProps {
   onSuccess: () => void;
@@ -12,40 +12,37 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Auto-fill analyst identity key if persisted
   useEffect(() => {
-    const savedEmail = localStorage.getItem('pc_onboarding_email');
-    if (savedEmail) {
-        setLoginEmail(savedEmail);
-    }
-
-    // Auto-fill or generate/persist private access key
-    let savedKey = localStorage.getItem('pc_access_key');
-    if (!savedKey) {
-        // Generate a cryptographic-style 64-character hex private key
-        const hexChars = '0123456789abcdef';
-        savedKey = '0x';
-        for (let i = 0; i < 64; i++) {
-            savedKey += hexChars[Math.floor(Math.random() * 16)];
-        }
-        localStorage.setItem('pc_access_key', savedKey);
-    }
-    setLoginPassword(savedKey);
+    getOrCreateIdentity().then((identity) => {
+      setLoginEmail(identity.publicKey);
+      setLoginPassword(identity.privateKey);
+    });
   }, []);
 
-  const handleLoginSubmit = () => {
+  const handleLoginSubmit = async () => {
     if (!loginEmail || !loginPassword) return;
     setIsProcessing(true);
-    // Persist login public key/identity & access key
-    localStorage.setItem('pc_onboarding_email', loginEmail);
-    localStorage.setItem('pc_access_key', loginPassword);
-    window.dispatchEvent(new Event('storage'));
-    // Simulate Auth Check
-    setTimeout(() => {
+    setAuthError(null);
+    try {
+      localStorage.setItem('pc_public_key', loginEmail);
+      localStorage.setItem('pc_private_key', loginPassword);
+      localStorage.setItem('pc_onboarding_email', loginEmail);
+      const res = await syncIdentityToServer({ publicKey: loginEmail, privateKey: loginPassword });
+      if (res.success) {
+        window.dispatchEvent(new Event('storage'));
         setIsProcessing(false);
         onSuccess();
-    }, 1500);
+      } else {
+        setAuthError(res.error || 'Cryptographic verification failed.');
+        setIsProcessing(false);
+      }
+    } catch (err: any) {
+      setAuthError(err.message || 'Authentication error.');
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -97,6 +94,12 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }
                         />
                     </div>
                 </div>
+
+                {authError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                        {authError}
+                    </div>
+                )}
 
                 <button 
                     onClick={handleLoginSubmit}
