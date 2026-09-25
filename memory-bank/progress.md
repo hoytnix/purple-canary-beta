@@ -68,6 +68,9 @@
 - [x] Passed custom donation amount into Stripe Checkout Session and recorded donation metadata.
 - [x] Updated UI copy in `MyAccount.tsx` and `CheckoutWizard.tsx`.
 
+### 9. Hero Layout & Checkout Streamlining
+- [x] Moved the forensic hardware kit product image out of `CheckoutWizard.tsx` (Step 2) into the hero left column in `LandingPage.tsx` directly beneath "Verified Accuracy & Instant Results".
+
 ---
 
 ## Active & In-Progress Work

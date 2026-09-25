@@ -169,6 +169,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                     <span>Instant Results</span>
                 </div>
             </div>
+
+            {/* Hardware Kit Preview Image */}
+            <div className="pt-2 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-400">
+                <div className="relative group max-w-sm md:max-w-md mx-auto md:mx-0 rounded-2xl overflow-hidden border border-white/10 bg-[#1a052b]/60 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                    <a href="https://i.ibb.co/JwGDZHMQ/download.png" target="_blank" rel="noopener noreferrer" className="block focus:outline-none">
+                        <img 
+                            src="https://i.ibb.co/JwGDZHMQ/download.png" 
+                            alt="Forensic Hardware Kit" 
+                            className="w-full h-auto object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+                            referrerPolicy="no-referrer"
+                        />
+                    </a>
+                </div>
+            </div>
         </div>
 
         {/* Hero Checkout Instance #1 */}

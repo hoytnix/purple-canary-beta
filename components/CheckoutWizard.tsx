@@ -588,14 +588,6 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
                 {/* Optional Hardware Kit Option */}
                 <div className="pt-2 space-y-3">
-                    <div className="w-3/4 mx-auto rounded-lg overflow-hidden border border-white/10 bg-[#1a052b]/50">
-                        <img 
-                            src="https://i.ibb.co/JwGDZHMQ/download.png" 
-                            alt="Forensic Hardware Kit" 
-                            className="w-full h-auto object-contain mx-auto"
-                            referrerPolicy="no-referrer"
-                        />
-                    </div>
                     <button 
                         onClick={() => setAddHardwareKit(!addHardwareKit)}
                         className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3

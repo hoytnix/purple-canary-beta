@@ -59,6 +59,9 @@
     - In `components/CheckoutWizard.tsx`, added dynamic donation amount controls with quick presets ($1, $5, $10, $25) and arbitrary custom USD input (minimum $0.50 enforced for Stripe card processing).
     - Integrated dynamic donation calculation into Stripe Checkout session creation (`/api/checkout/create-session`) and persisted `donationAmount` in Stripe metadata.
     - Updated user-facing labels in `CheckoutWizard.tsx` and `MyAccount.tsx` to reflect the donation model.
+18. **Hardware Kit Image Repositioning**:
+    - Removed the forensic hardware kit product image from inside `CheckoutWizard.tsx` (Step 2) to streamline the checkout wizard flow.
+    - Positioned the kit image directly into the Hero left column in `LandingPage.tsx` directly beneath the "Verified Accuracy & Instant Results" trust badges, maintaining full responsive constraints down to 375px.
 
 
 
