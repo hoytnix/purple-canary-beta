@@ -28,7 +28,9 @@ const PLANS = [
 
 export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, className = "" }) => {
   const [step, setStep] = useState(1);
-  const [email, setEmail] = useState('');
+  const [publicKey, setPublicKey] = useState('');
+  const [privateKey, setPrivateKey] = useState('');
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [country, setCountry] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'unlimited'>('unlimited');
   const [addHardwareKit, setAddHardwareKit] = useState(true);
@@ -56,10 +58,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     }
   };
 
-  // Step 1: Persistence for Email & Country
+  // Step 1: Persistence for Identity Key & Country
   useEffect(() => {
     getOrCreateIdentity().then((identity) => {
-      setEmail(identity.publicKey);
+      setPublicKey(identity.publicKey);
+      setPrivateKey(identity.privateKey);
       syncIdentityToServer(identity).catch((err) => console.error('Sync identity error:', err));
     });
     const savedCountry = localStorage.getItem('pc_onboarding_country') || 'US';
@@ -67,11 +70,16 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     localStorage.setItem('pc_onboarding_country', savedCountry);
   }, []);
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePublicKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    setEmail(val);
+    setPublicKey(val);
     localStorage.setItem('pc_public_key', val);
-    localStorage.setItem('pc_onboarding_email', val);
+  };
+
+  const handlePrivateKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPrivateKey(val);
+    localStorage.setItem('pc_private_key', val);
   };
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -82,7 +90,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
 
   const handleRotateIdentity = async () => {
     const newIdentity = await rotateIdentity();
-    setEmail(newIdentity.publicKey);
+    setPublicKey(newIdentity.publicKey);
+    setPrivateKey(newIdentity.privateKey);
     await syncIdentityToServer(newIdentity).catch(console.error);
     // Clear user cache-specific settings except country
     localStorage.removeItem('pc_user_tier');
@@ -108,7 +117,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
       localStorage.setItem('pc_user_tier', 'free');
       
       const userProfile: UserProfile = {
-        publicKey: email,
+        publicKey,
         username: 'Shaggy',
         tier: 'free',
         access: 'Alpha'
@@ -132,7 +141,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
       localStorage.setItem('pc_user_tier', selectedPlan);
       
       const userProfile: UserProfile = {
-        publicKey: email,
+        publicKey,
         username: 'Shaggy',
         tier: selectedPlan,
         access: 'Alpha',
@@ -149,7 +158,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: email,
+          userId: publicKey,
           priceId: 'price_XXXXX', // Stripe Price ID
           amount: total,
           productName: addHardwareKit
@@ -195,7 +204,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
             </button>
         )}
 
-        {/* --- STEP 1 (EMAIL & LOCATION) --- */}
+        {/* --- STEP 1 (IDENTITY & LOCATION) --- */}
         {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 pt-4">
                 <div className="text-center pt-2">
@@ -211,12 +220,42 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
                             <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-[16px] text-gray-500 group-focus-within:text-neon-cyan transition-colors">fingerprint</span>
                             <input 
                             type="text" 
-                            value={email}
-                            onChange={handleEmailChange}
+                            value={publicKey}
+                            onChange={handlePublicKeyChange}
                             placeholder="0x..."
                             className="w-full bg-[#1a052b]/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all font-mono text-xs"
                             />
                         </div>
+                    </div>
+
+                    {/* Identity Private Key Input */}
+                    <div className="space-y-1">
+                        <div className="flex items-center justify-between ml-2 pr-1">
+                            <label className="text-[9px] font-black uppercase tracking-widest text-gray-500">Identity Private Key</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowPrivateKey(!showPrivateKey)}
+                                className="text-[10px] text-gray-500 hover:text-neon-cyan flex items-center gap-1 transition-colors cursor-pointer"
+                            >
+                                <span className="material-symbols-rounded text-[14px]">
+                                    {showPrivateKey ? 'visibility_off' : 'visibility'}
+                                </span>
+                                <span>{showPrivateKey ? 'Hide' : 'Reveal'}</span>
+                            </button>
+                        </div>
+                        <div className="relative group">
+                            <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-[16px] text-gray-500 group-focus-within:text-neon-cyan transition-colors">vpn_key</span>
+                            <input 
+                            type={showPrivateKey ? "text" : "password"} 
+                            value={privateKey}
+                            onChange={handlePrivateKeyChange}
+                            placeholder="Stored locally on device..."
+                            className="w-full bg-[#1a052b]/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all font-mono text-xs"
+                            />
+                        </div>
+                        <p className="text-[9px] text-gray-500 ml-2 italic">
+                            Private keys never leave your device or touch the network.
+                        </p>
                     </div>
 
                     {/* Region Selector */}
@@ -227,9 +266,9 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
                             <span className="material-symbols-rounded absolute right-4 top-1/2 -translate-y-1/2 text-[16px] text-gray-500 pointer-events-none">expand_more</span>
                             
                             <select 
-                                value={country}
-                                onChange={handleCountryChange}
-                                className="w-full bg-[#1a052b]/50 border border-white/10 rounded-xl py-4 pl-12 pr-10 text-white appearance-none focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all cursor-pointer font-sans"
+                            value={country}
+                            onChange={handleCountryChange}
+                            className="w-full bg-[#1a052b]/50 border border-white/10 rounded-xl py-4 pl-12 pr-10 text-white appearance-none focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all cursor-pointer font-sans"
                             >
                                 <option value="" disabled className="text-gray-500">Select Continent</option>
                                 {CONTINENTS.map((c) => (
@@ -242,8 +281,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
                     </div>
 
                     <button 
-                        onClick={() => email && country && setStep(2)}
-                        disabled={!email || !country}
+                        onClick={() => publicKey && country && setStep(2)}
+                        disabled={!publicKey || !country}
                         className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2"
                     >
                         Continue <span className="material-symbols-rounded text-[16px]">arrow_forward</span>

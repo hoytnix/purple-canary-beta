@@ -4,7 +4,6 @@ import { LoginOverlay } from './LoginOverlay';
 import { PrivacyPolicy } from './PrivacyPolicy';
 import { CONTINENTS } from '../constants/index';
 import { subscribeAllLatestScanRecords } from '../services/firestoreService';
-import { AuthStatusWidget } from './AuthStatusWidget';
 
 const getContinentForLocation = (location: string) => {
   const locUpper = (location || '').toUpperCase();
@@ -169,11 +168,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                     <span className="material-symbols-rounded text-[16px] text-yellow-500">bolt</span> 
                     <span>Instant Results</span>
                 </div>
-            </div>
-
-            {/* Asymmetric Keypair & Sync Widget */}
-            <div className="pt-2 text-left animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-400">
-              <AuthStatusWidget />
             </div>
         </div>
 

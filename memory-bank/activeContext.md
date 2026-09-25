@@ -10,7 +10,7 @@
   - Client-side native Web Crypto API (`window.crypto.subtle`) ECDSA P-256 keypair generation and local storage persistence (`services/identity.ts`).
   - TursoDB `users` table modernized with `public_key TEXT PRIMARY KEY`, `nonce INTEGER DEFAULT 0`, and `last_login DATETIME`.
   - Signature-based authentication and upsert Route Handler deployed at `/api/auth/sync-identity` with IEEE P1363 / DER signature verification against `auth:${publicKey}:${timestamp}` to eliminate plaintext private key network transmission and prevent replay attacks.
-  - Interactive `AuthStatusWidget.tsx` integrated on Homepage, Checkout, and My Account views.
+   - Interactive `AuthStatusWidget.tsx` retained for account settings, while homepage hero consolidated keypair management into Page 1 of `CheckoutWizard.tsx` ("Unlock the Oracle.") with private key toggle directly beneath public key.
 - **Active Focus**:
   - Maintain synchronization between client-side signature database (`sopData.ts`, `constants.ts`) and edge AI validation schemas.
   - Verify camera auto-capture tuning, anchor grid stabilization, and substrate validation.
@@ -24,4 +24,5 @@
 5. **Stripe Post-Checkout Redirect & Auth**: Success redirect configured to `/scan?payment=success&session_id={CHECKOUT_SESSION_ID}`. The `/api/checkout/verify-session` route authenticates the customer, activates the `unlimited` tier, and sets state in `localStorage` before smoothly entering the forensic test suite.
 6. **Dedicated Test Suite Permalink (`/scan`)**: Provided direct route at `/scan` (via `app/scan/page.tsx`) to mount the forensic test suite directly.
 7. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons across all diagnostic screens.
-8. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+8. **Homepage Identity Consolidation**: Streamlined "Unlock the Oracle." (Page 1 of `CheckoutWizard.tsx`) by including both public and private key fields inline and removing redundant "Asymmetric Keypair Identity" widget section from homepage hero.
+9. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
