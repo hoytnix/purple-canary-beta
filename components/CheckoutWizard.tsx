@@ -1,13 +1,32 @@
+'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CONTINENTS } from '../constants/index';
-import { saveUserProfile, UserProfile } from '../services/firestoreService';
-import { getOrCreateIdentity, rotateIdentity, syncIdentityToServer } from '../services/identity';
+import { saveUserProfile, getUserProfile, UserProfile } from '../services/firestoreService';
+import { getOrCreateIdentity, rotateIdentity, syncIdentityToServer, validateKeyPair } from '../services/identity';
 
 interface CheckoutWizardProps {
   onComplete: () => void;
   className?: string;
+  paymentStatus?: string;
 }
+
+const isProLicenseStatus = (status?: string | null): boolean => {
+  if (!status) return false;
+  const s = status.toLowerCase().trim();
+  return (
+    s === 'unlimited' ||
+    s === 'pro' ||
+    s === 'pro license' ||
+    s === 'pro licese' ||
+    s === 'pro_license' ||
+    s === 'pro-license' ||
+    s === 'paid' ||
+    s === 'active' ||
+    s.includes('pro')
+  );
+};
 
 const PLANS = [
   { 
@@ -26,10 +45,17 @@ const PLANS = [
   },
 ];
 
-export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, className = "" }) => {
+export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ 
+  onComplete, 
+  className = "",
+  paymentStatus: paymentStatusProp
+}) => {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [publicKey, setPublicKey] = useState('');
   const [privateKey, setPrivateKey] = useState('');
+  const [isKeypairValid, setIsKeypairValid] = useState(false);
+  const [dbTier, setDbTier] = useState<string>('free');
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [country, setCountry] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'unlimited'>('unlimited');
@@ -37,10 +63,10 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
   const [isProcessing, setIsProcessing] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
 
-  const [shippingName, setShippingName] = useState(() => localStorage.getItem('pc_shipping_name') || '');
-  const [shippingAddress, setShippingAddress] = useState(() => localStorage.getItem('pc_shipping_address') || '');
-  const [shippingCity, setShippingCity] = useState(() => localStorage.getItem('pc_shipping_city') || '');
-  const [shippingZip, setShippingZip] = useState(() => localStorage.getItem('pc_shipping_zip') || '');
+  const [shippingName, setShippingName] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('pc_shipping_name') : '') || '');
+  const [shippingAddress, setShippingAddress] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('pc_shipping_address') : '') || '');
+  const [shippingCity, setShippingCity] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('pc_shipping_city') : '') || '');
+  const [shippingZip, setShippingZip] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('pc_shipping_zip') : '') || '');
 
   const handleShippingChange = (field: 'name' | 'address' | 'city' | 'zip', val: string) => {
     if (field === 'name') {
@@ -58,12 +84,55 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     }
   };
 
+  // Cryptographically validate keypair whenever publicKey or privateKey changes
+  useEffect(() => {
+    let active = true;
+    if (publicKey && privateKey) {
+      validateKeyPair(publicKey, privateKey)
+        .then((valid) => {
+          if (active) setIsKeypairValid(valid);
+        })
+        .catch(() => {
+          if (active) setIsKeypairValid(false);
+        });
+    } else {
+      setIsKeypairValid(false);
+    }
+    return () => {
+      active = false;
+    };
+  }, [publicKey, privateKey]);
+
+  // Query tier directly from the users row in the database
+  useEffect(() => {
+    let active = true;
+    if (!publicKey) return;
+
+    getUserProfile(publicKey)
+      .then((profile) => {
+        if (active && profile?.tier) {
+          setDbTier(profile.tier);
+        }
+      })
+      .catch((err) => console.error('Failed to load user tier from db:', err));
+
+    return () => {
+      active = false;
+    };
+  }, [publicKey, step]);
+
   // Step 1: Persistence for Identity Key & Country
   useEffect(() => {
     getOrCreateIdentity().then((identity) => {
       setPublicKey(identity.publicKey);
       setPrivateKey(identity.privateKey);
-      syncIdentityToServer(identity).catch((err) => console.error('Sync identity error:', err));
+      syncIdentityToServer(identity)
+        .then((res) => {
+          if (res.user?.tier) {
+            setDbTier(res.user.tier);
+          }
+        })
+        .catch((err) => console.error('Sync identity error:', err));
     });
     const savedCountry = localStorage.getItem('pc_onboarding_country') || 'US';
     setCountry(savedCountry);
@@ -92,14 +161,15 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     const newIdentity = await rotateIdentity();
     setPublicKey(newIdentity.publicKey);
     setPrivateKey(newIdentity.privateKey);
-    await syncIdentityToServer(newIdentity).catch(console.error);
-    // Clear user cache-specific settings except country
-    localStorage.removeItem('pc_user_tier');
+    setDbTier('free');
+    const res = await syncIdentityToServer(newIdentity).catch(console.error);
+    if (res && 'user' in res && res.user?.tier) {
+      setDbTier(res.user.tier);
+    }
     localStorage.removeItem('pc_shipping_name');
     localStorage.removeItem('pc_shipping_address');
     localStorage.removeItem('pc_shipping_city');
     localStorage.removeItem('pc_shipping_zip');
-    // Dispatch event to refresh state globally
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -109,30 +179,74 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
     return planPrice + kitPrice;
   };
 
-  const handleProceedStep2 = () => {
-    const total = calculateTotal();
-    if (total === 0) {
-      // Free version, no kit: complete immediately
-      setIsProcessing(true);
-      localStorage.setItem('pc_user_tier', 'free');
-      
-      const userProfile: UserProfile = {
-        publicKey,
-        username: 'Shaggy',
-        tier: 'free',
-        access: 'Alpha'
-      };
-      
-      saveUserProfile(userProfile).catch(console.error);
+  // Check tier from db users row
+  const isPaymentStatusPro = isProLicenseStatus(paymentStatusProp || dbTier);
 
-      setTimeout(() => {
+  const canBypassToScan = Boolean(
+    publicKey &&
+    publicKey.trim().length > 0 &&
+    isKeypairValid &&
+    isPaymentStatusPro &&
+    !addHardwareKit
+  );
+
+  const handleProceedStep2 = async () => {
+    setIsProcessing(true);
+    try {
+      // 1. Verify keypair matches
+      const keyMatch = isKeypairValid || (await validateKeyPair(publicKey, privateKey));
+
+      // 2. Fetch fresh tier directly from the users row in the database
+      const profile = await getUserProfile(publicKey.trim());
+      const currentTier = profile?.tier || dbTier;
+      if (profile?.tier) {
+        setDbTier(profile.tier);
+      }
+      const isPro = isProLicenseStatus(paymentStatusProp || currentTier);
+
+      // If public key exists, private key matches, tier in DB is Pro License, and kit is unchecked:
+      if (publicKey.trim().length > 0 && keyMatch && isPro && !addHardwareKit) {
         setIsProcessing(false);
-        onComplete();
-      }, 1200);
-    } else {
-      setStep(3);
+        if (typeof window !== 'undefined') {
+          if (window.location.pathname === '/scan') {
+            onComplete();
+          } else {
+            try {
+              router.push('/scan');
+            } catch {
+              window.location.href = '/scan';
+            }
+          }
+        }
+        return;
+      }
+
+      const total = calculateTotal();
+      if (total === 0) {
+        // Free version, no kit: complete immediately
+        const userProfile: UserProfile = {
+          publicKey,
+          username: profile?.username || 'Shaggy',
+          tier: 'free',
+          access: 'Alpha'
+        };
+        
+        await saveUserProfile(userProfile).catch(console.error);
+
+        setTimeout(() => {
+          setIsProcessing(false);
+          onComplete();
+        }, 1200);
+      } else {
+        setIsProcessing(false);
+        setStep(3);
+      }
+    } catch (err) {
+      console.error('Error proceeding step 2:', err);
+      setIsProcessing(false);
     }
   };
+
 
   const handleStripeCheckout = async () => {
     setIsProcessing(true);
@@ -392,7 +506,13 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({ onComplete, clas
                 disabled={isProcessing}
                 className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg mt-2 flex items-center justify-center gap-2"
                 >
-                {isProcessing ? "Unlocking Suite..." : calculateTotal() === 0 ? "Unlock Suite (Free)" : "Proceed to Checkout"}
+                {isProcessing 
+                  ? "Unlocking Suite..." 
+                  : canBypassToScan 
+                    ? "Proceed to Scan" 
+                    : calculateTotal() === 0 
+                      ? "Unlock Suite (Free)" 
+                      : "Proceed to Checkout"}
                 <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
                 </button>
             </div>

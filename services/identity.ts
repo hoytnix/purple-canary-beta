@@ -1,6 +1,5 @@
 const STORAGE_PUB_KEY = 'pc_public_key';
 const STORAGE_PRIV_KEY = 'pc_private_key';
-const LEGACY_STORAGE_KEY = 'pc_onboarding_email';
 
 export interface KeyPairStrings {
   publicKey: string;
@@ -39,7 +38,7 @@ export function base64ToBuffer(base64: string): ArrayBuffer {
  */
 export function getStoredPublicKey(): string | null {
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem(STORAGE_PUB_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
+  return localStorage.getItem(STORAGE_PUB_KEY);
 }
 
 /**
@@ -81,8 +80,6 @@ export async function getOrCreateIdentity(): Promise<KeyPairStrings> {
   const existingPriv = localStorage.getItem(STORAGE_PRIV_KEY);
 
   if (existingPub && existingPriv) {
-    // Keep legacy storage key synchronized
-    localStorage.setItem(LEGACY_STORAGE_KEY, existingPub);
     return { publicKey: existingPub, privateKey: existingPriv };
   }
 
@@ -118,7 +115,6 @@ export async function generateAndPersistKeypair(): Promise<KeyPairStrings> {
 
   localStorage.setItem(STORAGE_PUB_KEY, pubB64);
   localStorage.setItem(STORAGE_PRIV_KEY, privB64);
-  localStorage.setItem(LEGACY_STORAGE_KEY, pubB64);
 
   return { publicKey: pubB64, privateKey: privB64 };
 }
@@ -130,7 +126,6 @@ export async function rotateIdentity(): Promise<KeyPairStrings> {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(STORAGE_PUB_KEY);
     localStorage.removeItem(STORAGE_PRIV_KEY);
-    localStorage.removeItem(LEGACY_STORAGE_KEY);
   }
   return generateAndPersistKeypair();
 }
@@ -198,3 +193,63 @@ export async function syncIdentityToServer(
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Cryptographically verifies that a private key matches a given public key using ECDSA P-256.
+ * Returns true if public key exists, private key exists, and private key successfully signs
+ * a test payload that is verified by the public key.
+ */
+export async function validateKeyPair(publicKeyB64: string, privateKeyB64: string): Promise<boolean> {
+  if (!publicKeyB64 || !privateKeyB64) return false;
+  const pubStr = publicKeyB64.trim();
+  const privStr = privateKeyB64.trim();
+  if (!pubStr || !privStr) return false;
+
+  try {
+    const cryptoSubtle =
+      typeof window !== 'undefined' && window.crypto?.subtle
+        ? window.crypto.subtle
+        : globalThis.crypto?.subtle;
+
+    if (!cryptoSubtle) {
+      return false;
+    }
+
+    const privBuffer = base64ToBuffer(privStr);
+    const privKey = await cryptoSubtle.importKey(
+      'pkcs8',
+      privBuffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+
+    const pubBuffer = base64ToBuffer(pubStr);
+    const pubKey = await cryptoSubtle.importKey(
+      'spki',
+      pubBuffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    const testPayload = new TextEncoder().encode(`verify-pair:${Date.now()}`);
+    const signature = await cryptoSubtle.sign(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      privKey,
+      testPayload
+    );
+
+    const isValid = await cryptoSubtle.verify(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      pubKey,
+      signature,
+      testPayload
+    );
+
+    return isValid;
+  } catch {
+    return false;
+  }
+}
+

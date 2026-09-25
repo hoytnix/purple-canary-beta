@@ -25,4 +25,6 @@
 6. **Dedicated Test Suite Permalink (`/scan`)**: Provided direct route at `/scan` (via `app/scan/page.tsx`) to mount the forensic test suite directly.
 7. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons across all diagnostic screens.
 8. **Homepage Identity Consolidation**: Streamlined "Unlock the Oracle." (Page 1 of `CheckoutWizard.tsx`) by including both public and private key fields inline and removing redundant "Asymmetric Keypair Identity" widget section from homepage hero.
-9. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+9. **License Page Pro License Bypass to `/scan`**: On Page 2 of `CheckoutWizard.tsx` ("Choose your License."), when the public key exists, the private key mathematically matches the public key via ECDSA P-256 validation (`validateKeyPair`), the user's tier directly in the database `users` row is Pro License (`unlimited` or `pro`), and the hardware kit is unchecked, the submit button dynamically shifts from "Proceed to Checkout" to "Proceed to Scan" and navigates directly to the `/scan` route without requiring re-payment or checkout wizard loops.
+10. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+

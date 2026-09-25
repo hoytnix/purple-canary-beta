@@ -26,11 +26,13 @@
 - [x] Integrated client-side canvas color extraction and Rf spot analysis (`services/cvService.ts`, `services/matchingService.ts`, `services/colorimetry.ts`).
 - [x] Provided client-side PDF forensic reporting via `services/exportService.ts`.
 
-### 5. Secure Asymmetric Keypair Authentication
+### 5. Secure Asymmetric Keypair Authentication & License Workflow
 - [x] Implemented ECDSA P-256 keypair generation via native `window.crypto.subtle` in `services/identity.ts` without plaintext network exposure.
 - [x] Modernized TursoDB schema and Drizzle ORM models with `public_key TEXT PRIMARY KEY`, `nonce INTEGER DEFAULT 0`, and `last_login DATETIME`.
 - [x] Created Route Handler `app/api/auth/sync-identity/route.ts` for challenge-response signature verification with replay attack mitigation and dual IEEE P1363 / ASN.1 DER verification.
 - [x] Created `AuthStatusWidget.tsx` for My Account modal, and consolidated inline public and private key fields onto Page 1 of `CheckoutWizard.tsx` ("Unlock the Oracle."), removing duplicate widget section from homepage hero.
+- [x] Added cryptographic keypair validation (`validateKeyPair`) and database-driven `tier` verification in `CheckoutWizard.tsx`: users with verified matching keypair, Pro License tier in the TursoDB `users` row, and unchecked hardware kit bypass payment checkout and route directly to `/scan`.
+
 
 ---
 
