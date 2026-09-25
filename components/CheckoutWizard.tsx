@@ -130,13 +130,22 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
   // Step 1: Persistence for Identity Key & Country (local state only, no DB insert)
   useEffect(() => {
-    getOrCreateIdentity().then((identity) => {
-      setPublicKey(identity.publicKey);
-      setPrivateKey(identity.privateKey);
-    });
+    const syncFromStorage = () => {
+      getOrCreateIdentity().then((identity) => {
+        setPublicKey(identity.publicKey);
+        setPrivateKey(identity.privateKey);
+      });
+    };
+
+    syncFromStorage();
     const savedCountry = localStorage.getItem('pc_onboarding_country') || 'US';
     setCountry(savedCountry);
     localStorage.setItem('pc_onboarding_country', savedCountry);
+
+    window.addEventListener('storage', syncFromStorage);
+    return () => {
+      window.removeEventListener('storage', syncFromStorage);
+    };
   }, []);
 
   const handlePublicKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -271,9 +280,13 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     setStripeError(null);
     try {
       localStorage.setItem('pc_user_tier', selectedPlan);
+      const activePrivKey = privateKey || (typeof window !== 'undefined' ? localStorage.getItem('pc_private_key') : '') || '';
+      if (publicKey && activePrivKey) {
+        localStorage.setItem('pc_public_key', publicKey);
+        localStorage.setItem('pc_private_key', activePrivKey);
+      }
 
       const total = calculateTotal();
-      const activePrivKey = privateKey || (typeof window !== 'undefined' ? localStorage.getItem('pc_private_key') : '') || '';
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -42,6 +42,13 @@
     - Removed premature `saveUserProfile` calls in `MyAccount.tsx` to ensure user profiles are never inserted into TursoDB prior to checkout completion or explicit registration.
     - Deprecated arbitrary unauthenticated insertions via `POST /api/users`.
     - Enforced that TursoDB `users.private_key_hash` is always stored in PBKDF2 SHA-512 `SALT:HASH` (`${salt}:${hash}`) format.
+15. **Pre-Checkout User Insertion & Keypair Concurrency Stabilization**:
+    - Addressed post-payment homepage lockout (`Keypair mismatch: Private key does not correspond to public key`) caused by concurrent asynchronous key generation across multiple `CheckoutWizard` landing page instances.
+    - Implemented a singleton generation lock (`inFlightGenerationPromise`) in `services/identity.ts` to ensure concurrent calls share the exact same keypair generation promise.
+    - Added self-healing validation in `getOrCreateIdentity()`: mathematically tests existing keypairs via `validateKeyPair`; if corrupted or mismatched, automatically clears and generates a fresh, matching pair.
+    - Added window `storage` event listeners in `CheckoutWizard.tsx` to keep all wizard instances synchronized.
+    - Implemented pre-checkout user insertion in `/api/checkout/create-session`: user row is inserted into TursoDB immediately before Stripe redirection with `tier: 'free'` and salted `privateKeyHash`, and updated to `tier: 'unlimited'` upon successful payment completion.
+    - Prevented `App.tsx` post-checkout redirect handler from desynchronizing public key in `localStorage`.
 
 
 

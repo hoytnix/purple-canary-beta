@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { hashPrivateKey } from '@/services/authSecurity';
 
+import { dbService } from '@/services/dbService';
+
 let stripeClient: Stripe | null = null;
 function getStripe(): Stripe {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -22,7 +24,6 @@ export async function POST(req: NextRequest) {
     let saltedHash = privateKey ? hashPrivateKey(privateKey) : undefined;
     if (!saltedHash && userId) {
       try {
-        const { dbService } = await import('@/services/dbService');
         const existing = await dbService.getUser(userId);
         if (existing?.privateKeyHash) {
           saltedHash = existing.privateKeyHash;
@@ -31,6 +32,40 @@ export async function POST(req: NextRequest) {
         // Continue with available metadata
       }
     }
+
+    // Pre-insert user into database before redirecting to Stripe
+    if (userId) {
+      try {
+        const existing = await dbService.getUser(userId);
+        if (!existing) {
+          await dbService.upsertUser({
+            publicKey: userId,
+            privateKeyHash: saltedHash || null,
+            username: (metadata?.username as string) || 'Shaggy',
+            tier: 'free',
+            access: 'Alpha',
+            shippingName: (metadata?.shippingName as string) || null,
+            shippingAddress: (metadata?.shippingAddress as string) || null,
+            shippingCity: (metadata?.shippingCity as string) || null,
+            shippingZip: (metadata?.shippingZip as string) || null,
+            lastLogin: new Date().toISOString(),
+          });
+        } else if (saltedHash && !existing.privateKeyHash) {
+          await dbService.upsertUser({
+            publicKey: userId,
+            privateKeyHash: saltedHash,
+            ...(metadata?.shippingName && { shippingName: metadata.shippingName }),
+            ...(metadata?.shippingAddress && { shippingAddress: metadata.shippingAddress }),
+            ...(metadata?.shippingCity && { shippingCity: metadata.shippingCity }),
+            ...(metadata?.shippingZip && { shippingZip: metadata.shippingZip }),
+            lastLogin: new Date().toISOString(),
+          });
+        }
+      } catch (insertErr) {
+        console.error('Error pre-inserting user before Stripe redirect:', insertErr);
+      }
+    }
+
     const sessionMetadata: Record<string, string> = {
       ...(metadata || {}),
       ...(saltedHash ? { privateKeyHash: saltedHash } : {}),

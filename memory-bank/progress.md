@@ -46,6 +46,9 @@
 - [x] Eliminated premature profile inserts on account modal load in `MyAccount.tsx`.
 - [x] Deprecated unauthenticated `POST /api/users` endpoint to protect user table integrity.
 - [x] Enforced strict `SALT:HASH` format for all `users.private_key_hash` database columns in live TursoDB.
+- [x] Pre-inserted user record into TursoDB at `/api/checkout/create-session` before Stripe redirect, updating tier to `unlimited` on payment completion.
+- [x] Added singleton promise lock and self-healing mathematical keypair validation in `services/identity.ts` (`getOrCreateIdentity`) to prevent race conditions and keypair mismatch lockouts across multiple `CheckoutWizard` components.
+- [x] Added storage event listener in `CheckoutWizard.tsx` to keep all wizard instances synchronized.
 
 
 

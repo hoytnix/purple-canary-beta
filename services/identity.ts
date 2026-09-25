@@ -69,7 +69,70 @@ export function generatePublicKey(): string {
 }
 
 /**
+ * Cryptographically verifies that a private key matches a given public key using ECDSA P-256.
+ * Returns true if public key exists, private key exists, and private key successfully signs
+ * a test payload that is verified by the public key.
+ */
+export async function validateKeyPair(publicKeyB64: string, privateKeyB64: string): Promise<boolean> {
+  if (!publicKeyB64 || !privateKeyB64) return false;
+  const pubStr = publicKeyB64.trim();
+  const privStr = privateKeyB64.trim();
+  if (!pubStr || !privStr) return false;
+
+  try {
+    const cryptoSubtle =
+      typeof window !== 'undefined' && window.crypto?.subtle
+        ? window.crypto.subtle
+        : globalThis.crypto?.subtle;
+
+    if (!cryptoSubtle) {
+      return false;
+    }
+
+    const privBuffer = base64ToBuffer(privStr);
+    const privKey = await cryptoSubtle.importKey(
+      'pkcs8',
+      privBuffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+
+    const pubBuffer = base64ToBuffer(pubStr);
+    const pubKey = await cryptoSubtle.importKey(
+      'spki',
+      pubBuffer,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['verify']
+    );
+
+    const testPayload = new TextEncoder().encode(`verify-pair:${Date.now()}`);
+    const signature = await cryptoSubtle.sign(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      privKey,
+      testPayload
+    );
+
+    const isValid = await cryptoSubtle.verify(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      pubKey,
+      signature,
+      testPayload
+    );
+
+    return isValid;
+  } catch {
+    return false;
+  }
+}
+
+// In-flight singleton lock to prevent race conditions during concurrent key generation
+let inFlightGenerationPromise: Promise<KeyPairStrings> | null = null;
+
+/**
  * Initializes or retrieves existing ECDSA P-256 keypair from localStorage.
+ * Ensures the stored keypair mathematically matches, auto-repairing if corrupted or mismatched.
  */
 export async function getOrCreateIdentity(): Promise<KeyPairStrings> {
   if (typeof window === 'undefined') {
@@ -80,7 +143,14 @@ export async function getOrCreateIdentity(): Promise<KeyPairStrings> {
   const existingPriv = localStorage.getItem(STORAGE_PRIV_KEY);
 
   if (existingPub && existingPriv) {
-    return { publicKey: existingPub, privateKey: existingPriv };
+    const isValid = await validateKeyPair(existingPub, existingPriv);
+    if (isValid) {
+      return { publicKey: existingPub, privateKey: existingPriv };
+    }
+    // Mismatched or corrupted keys in localStorage - clean and auto-regenerate
+    console.warn('Mismatched keypair detected in localStorage. Re-generating consistent identity.');
+    localStorage.removeItem(STORAGE_PUB_KEY);
+    localStorage.removeItem(STORAGE_PRIV_KEY);
   }
 
   return generateAndPersistKeypair();
@@ -88,6 +158,7 @@ export async function getOrCreateIdentity(): Promise<KeyPairStrings> {
 
 /**
  * Generates a new ECDSA P-256 keypair and persists it to localStorage.
+ * Uses a singleton promise to avoid multiple simultaneous calls generating divergent keys.
  */
 export async function generateAndPersistKeypair(): Promise<KeyPairStrings> {
   if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
@@ -96,27 +167,40 @@ export async function generateAndPersistKeypair(): Promise<KeyPairStrings> {
     return { publicKey: mockPub, privateKey: '' };
   }
 
-  // Generate ECDSA P-256 keypair
-  const keyPair = await window.crypto.subtle.generateKey(
-    {
-      name: 'ECDSA',
-      namedCurve: 'P-256',
-    },
-    true,
-    ['sign', 'verify']
-  );
+  if (inFlightGenerationPromise) {
+    return inFlightGenerationPromise;
+  }
 
-  // Export keys as raw SPKI (public) and PKCS8 (private) strings
-  const pubRaw = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
-  const privRaw = await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+  inFlightGenerationPromise = (async () => {
+    try {
+      // Generate ECDSA P-256 keypair
+      const keyPair = await window.crypto.subtle.generateKey(
+        {
+          name: 'ECDSA',
+          namedCurve: 'P-256',
+        },
+        true,
+        ['sign', 'verify']
+      );
 
-  const pubB64 = bufferToBase64(pubRaw);
-  const privB64 = bufferToBase64(privRaw);
+      // Export keys as raw SPKI (public) and PKCS8 (private) strings
+      const pubRaw = await window.crypto.subtle.exportKey('spki', keyPair.publicKey);
+      const privRaw = await window.crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
 
-  localStorage.setItem(STORAGE_PUB_KEY, pubB64);
-  localStorage.setItem(STORAGE_PRIV_KEY, privB64);
+      const pubB64 = bufferToBase64(pubRaw);
+      const privB64 = bufferToBase64(privRaw);
 
-  return { publicKey: pubB64, privateKey: privB64 };
+      localStorage.setItem(STORAGE_PUB_KEY, pubB64);
+      localStorage.setItem(STORAGE_PRIV_KEY, privB64);
+      window.dispatchEvent(new Event('storage'));
+
+      return { publicKey: pubB64, privateKey: privB64 };
+    } finally {
+      inFlightGenerationPromise = null;
+    }
+  })();
+
+  return inFlightGenerationPromise;
 }
 
 /**
@@ -214,62 +298,4 @@ export async function syncIdentityToServer(
   }
 }
 
-/**
- * Cryptographically verifies that a private key matches a given public key using ECDSA P-256.
- * Returns true if public key exists, private key exists, and private key successfully signs
- * a test payload that is verified by the public key.
- */
-export async function validateKeyPair(publicKeyB64: string, privateKeyB64: string): Promise<boolean> {
-  if (!publicKeyB64 || !privateKeyB64) return false;
-  const pubStr = publicKeyB64.trim();
-  const privStr = privateKeyB64.trim();
-  if (!pubStr || !privStr) return false;
-
-  try {
-    const cryptoSubtle =
-      typeof window !== 'undefined' && window.crypto?.subtle
-        ? window.crypto.subtle
-        : globalThis.crypto?.subtle;
-
-    if (!cryptoSubtle) {
-      return false;
-    }
-
-    const privBuffer = base64ToBuffer(privStr);
-    const privKey = await cryptoSubtle.importKey(
-      'pkcs8',
-      privBuffer,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
-
-    const pubBuffer = base64ToBuffer(pubStr);
-    const pubKey = await cryptoSubtle.importKey(
-      'spki',
-      pubBuffer,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['verify']
-    );
-
-    const testPayload = new TextEncoder().encode(`verify-pair:${Date.now()}`);
-    const signature = await cryptoSubtle.sign(
-      { name: 'ECDSA', hash: { name: 'SHA-256' } },
-      privKey,
-      testPayload
-    );
-
-    const isValid = await cryptoSubtle.verify(
-      { name: 'ECDSA', hash: { name: 'SHA-256' } },
-      pubKey,
-      signature,
-      testPayload
-    );
-
-    return isValid;
-  } catch {
-    return false;
-  }
-}
 

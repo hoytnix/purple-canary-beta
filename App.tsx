@@ -45,21 +45,18 @@ export const WorkflowEngine: React.FC<WorkflowEngineProps> = ({ initialView = 'L
         fetch(`/api/checkout/verify-session?session_id=${encodeURIComponent(sessionId)}`)
           .then(res => res.json())
           .then(async (data) => {
-            if (data.userId) {
-              localStorage.setItem('pc_public_key', data.userId);
-            }
             if (data.tier) {
               localStorage.setItem('pc_user_tier', data.tier);
             }
-            window.dispatchEvent(new Event('storage'));
 
-            // Ensure the user's privateKeyHash is guaranteed synced to their row
+            // Ensure the user's identity is guaranteed valid and synced to their row
             try {
               const identity = await getOrCreateIdentity();
               await syncIdentityToServer(identity, { registerIfMissing: true, tier: data.tier || 'unlimited' });
             } catch (syncErr) {
               console.error('Post-checkout identity sync error:', syncErr);
             }
+            window.dispatchEvent(new Event('storage'));
 
             // Remove search params cleanly without reload
             const cleanUrl = window.location.pathname;
