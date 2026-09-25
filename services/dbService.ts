@@ -1,14 +1,13 @@
 import { db, initDatabase } from './turso';
-import { users, scans, transactions, subscriptions } from './schema';
+import { users, scans, transactions } from './schema';
 import { eq, desc, sql } from 'drizzle-orm';
 
 export interface UserRecord {
   publicKey: string;
   id?: string;
+  privateKeyHash?: string;
   nonce?: number;
   stripeCustomerId?: string;
-  subscriptionStatus: string;
-  credits: number;
   username?: string;
   tier?: string;
   access?: string;
@@ -33,10 +32,9 @@ export const dbService = {
     return {
       publicKey: row.publicKey,
       id: row.publicKey,
+      privateKeyHash: row.privateKeyHash ?? undefined,
       nonce: Number(row.nonce ?? 0),
       stripeCustomerId: row.stripeCustomerId ?? undefined,
-      subscriptionStatus: row.subscriptionStatus ?? 'inactive',
-      credits: Number(row.credits ?? 0),
       username: row.username ?? 'Shaggy',
       tier: row.tier ?? 'free',
       access: row.access ?? 'Alpha',
@@ -57,10 +55,9 @@ export const dbService = {
       .insert(users)
       .values({
         publicKey: key,
+        privateKeyHash: user.privateKeyHash ?? null,
         nonce: user.nonce ?? 0,
         stripeCustomerId: user.stripeCustomerId ?? null,
-        subscriptionStatus: user.subscriptionStatus ?? 'inactive',
-        credits: user.credits ?? 0,
         username: user.username ?? 'Shaggy',
         tier: user.tier ?? 'free',
         access: user.access ?? 'Alpha',
@@ -72,10 +69,9 @@ export const dbService = {
       .onConflictDoUpdate({
         target: users.publicKey,
         set: {
+          ...(user.privateKeyHash !== undefined && { privateKeyHash: user.privateKeyHash }),
           ...(user.nonce !== undefined && { nonce: user.nonce }),
           ...(user.stripeCustomerId !== undefined && { stripeCustomerId: user.stripeCustomerId }),
-          ...(user.subscriptionStatus !== undefined && { subscriptionStatus: user.subscriptionStatus }),
-          ...(user.credits !== undefined && { credits: user.credits }),
           ...(user.username !== undefined && { username: user.username }),
           ...(user.tier !== undefined && { tier: user.tier }),
           ...(user.access !== undefined && { access: user.access }),
@@ -157,7 +153,7 @@ export const dbService = {
         matrix: parsedData.matrix || 'SOLID_CRYSTAL',
         detections: parsedData.detections || [],
         createdAt: r.createdAt || parsedData.createdAt || new Date().toISOString(),
-        email: r.userId || '0xanonymous',
+        publicKey: r.userId || '0xanonymous',
         shortDescription: parsedData.shortDescription,
         longDescription: parsedData.longDescription,
       };

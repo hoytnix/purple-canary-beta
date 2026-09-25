@@ -14,19 +14,24 @@ export const turso = createClient({
 export const db = drizzle(turso, { schema });
 
 export async function initDatabase(): Promise<void> {
-  // Check if legacy users table exists with 'id' instead of 'public_key'
+  // 1. Drop deprecated subscriptions table if present
+  try {
+    await turso.execute(`DROP TABLE IF EXISTS subscriptions;`);
+  } catch {
+    // Ignore error if table cannot be dropped
+  }
+
+  // 2. Migrate users table to remove deprecated email, subscription_status, and credits
   try {
     const tableInfo = await turso.execute(`PRAGMA table_info(users)`);
     const cols = tableInfo.rows.map((r: any) => r.name);
-    if (cols.includes('id') && !cols.includes('public_key')) {
+    if (cols.includes('subscription_status') || cols.includes('credits') || (cols.includes('id') && !cols.includes('public_key'))) {
       await turso.execute(`PRAGMA foreign_keys = OFF;`);
       await turso.execute(`
-        CREATE TABLE IF NOT EXISTS users_v2 (
+        CREATE TABLE IF NOT EXISTS users_clean (
           public_key TEXT PRIMARY KEY,
           nonce INTEGER DEFAULT 0,
           stripe_customer_id TEXT,
-          subscription_status TEXT DEFAULT 'inactive',
-          credits INTEGER DEFAULT 0,
           username TEXT DEFAULT 'Shaggy',
           tier TEXT DEFAULT 'free',
           access TEXT DEFAULT 'Alpha',
@@ -38,25 +43,27 @@ export async function initDatabase(): Promise<void> {
           last_login DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
+      const keyCol = cols.includes('public_key') ? 'public_key' : 'id';
+      const lastLoginCol = cols.includes('last_login') ? 'last_login' : 'created_at';
       await turso.execute(`
-        INSERT OR IGNORE INTO users_v2 (public_key, stripe_customer_id, subscription_status, credits, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, last_login)
-        SELECT id, stripe_customer_id, subscription_status, credits, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, created_at FROM users;
+        INSERT OR IGNORE INTO users_clean (public_key, stripe_customer_id, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, last_login)
+        SELECT ${keyCol}, stripe_customer_id, username, tier, access, shipping_name, shipping_address, shipping_city, shipping_zip, created_at, COALESCE(${lastLoginCol}, created_at) FROM users;
       `);
       await turso.execute(`DROP TABLE users;`);
-      await turso.execute(`ALTER TABLE users_v2 RENAME TO users;`);
+      await turso.execute(`ALTER TABLE users_clean RENAME TO users;`);
       await turso.execute(`PRAGMA foreign_keys = ON;`);
     }
   } catch {
     // Proceed if table doesn't exist yet
   }
 
+  // 3. Ensure clean users table exists
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS users (
       public_key TEXT PRIMARY KEY,
+      private_key_hash TEXT,
       nonce INTEGER DEFAULT 0,
       stripe_customer_id TEXT,
-      subscription_status TEXT DEFAULT 'inactive',
-      credits INTEGER DEFAULT 0,
       username TEXT DEFAULT 'Shaggy',
       tier TEXT DEFAULT 'free',
       access TEXT DEFAULT 'Alpha',
@@ -69,6 +76,7 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // 4. Ensure scans table exists
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS scans (
       id TEXT PRIMARY KEY,
@@ -80,6 +88,7 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
+  // 5. Ensure transactions table exists
   await turso.execute(`
     CREATE TABLE IF NOT EXISTS transactions (
       id TEXT PRIMARY KEY,
@@ -88,19 +97,6 @@ export async function initDatabase(): Promise<void> {
       amount INTEGER,
       currency TEXT DEFAULT 'usd',
       status TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(public_key)
-    );
-  `);
-
-  await turso.execute(`
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      stripe_subscription_id TEXT UNIQUE,
-      status TEXT,
-      price_id TEXT,
-      current_period_end TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(public_key)
     );

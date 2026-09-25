@@ -3,10 +3,9 @@ import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
   publicKey: text('public_key').primaryKey(),
+  privateKeyHash: text('private_key_hash'),
   nonce: integer('nonce').default(0),
   stripeCustomerId: text('stripe_customer_id'),
-  subscriptionStatus: text('subscription_status').default('inactive'),
-  credits: integer('credits').default(0),
   username: text('username').default('Shaggy'),
   tier: text('tier').default('free'),
   access: text('access').default('Alpha'),
@@ -36,21 +35,9 @@ export const transactions = sqliteTable('transactions', {
   createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`),
 });
 
-export const subscriptions = sqliteTable('subscriptions', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull(),
-  stripeSubscriptionId: text('stripe_subscription_id').unique(),
-  status: text('status'),
-  priceId: text('price_id'),
-  currentPeriodEnd: text('current_period_end'),
-  createdAt: text('created_at').default(sql`(CURRENT_TIMESTAMP)`),
-});
-
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Scan = typeof scans.$inferSelect;
 export type NewScan = typeof scans.$inferInsert;
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
-export type Subscription = typeof subscriptions.$inferSelect;
-export type NewSubscription = typeof subscriptions.$inferInsert;

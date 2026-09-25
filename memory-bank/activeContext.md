@@ -26,5 +26,7 @@
 7. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons across all diagnostic screens.
 8. **Homepage Identity Consolidation**: Streamlined "Unlock the Oracle." (Page 1 of `CheckoutWizard.tsx`) by including both public and private key fields inline and removing redundant "Asymmetric Keypair Identity" widget section from homepage hero.
 9. **License Page Pro License Bypass to `/scan`**: On Page 2 of `CheckoutWizard.tsx` ("Choose your License."), when the public key exists, the private key mathematically matches the public key via ECDSA P-256 validation (`validateKeyPair`), the user's tier directly in the database `users` row is Pro License (`unlimited` or `pro`), and the hardware kit is unchecked, the submit button dynamically shifts from "Proceed to Checkout" to "Proceed to Scan" and navigates directly to the `/scan` route without requiring re-payment or checkout wizard loops.
-10. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+10. **Salted Private Key Hash Authentication (Anti-Impersonation)**: In the `users` table, added `private_key_hash TEXT` managed via Drizzle push (`drizzle-kit push`). Client identity authentication at `/api/auth/sync-identity` computes and verifies a salted PBKDF2 SHA-512 hash (`salt:hash`) against the database row with `crypto.timingSafeEqual`, preventing anyone from impersonating another user's public key.
+11. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+
 

@@ -55,6 +55,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
   const [publicKey, setPublicKey] = useState('');
   const [privateKey, setPrivateKey] = useState('');
   const [isKeypairValid, setIsKeypairValid] = useState(false);
+  const [isServerAuthenticated, setIsServerAuthenticated] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [dbTier, setDbTier] = useState<string>('free');
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [country, setCountry] = useState('');
@@ -84,19 +86,42 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     }
   };
 
-  // Cryptographically validate keypair whenever publicKey or privateKey changes
+  // Cryptographically validate keypair client-side AND verify with server against salted hash in db
   useEffect(() => {
     let active = true;
     if (publicKey && privateKey) {
       validateKeyPair(publicKey, privateKey)
-        .then((valid) => {
-          if (active) setIsKeypairValid(valid);
+        .then(async (valid) => {
+          if (!active) return;
+          setIsKeypairValid(valid);
+          if (valid) {
+            const authRes = await syncIdentityToServer({ publicKey, privateKey });
+            if (!active) return;
+            if (authRes.success && authRes.user) {
+              setIsServerAuthenticated(true);
+              setAuthError(null);
+              if (authRes.user.tier) {
+                setDbTier(authRes.user.tier);
+              }
+            } else {
+              setIsServerAuthenticated(false);
+              setAuthError(authRes.error || 'Authentication rejected: Invalid private key.');
+            }
+          } else {
+            setIsServerAuthenticated(false);
+            setAuthError('Keypair mismatch: Private key does not correspond to public key.');
+          }
         })
         .catch(() => {
-          if (active) setIsKeypairValid(false);
+          if (active) {
+            setIsKeypairValid(false);
+            setIsServerAuthenticated(false);
+          }
         });
     } else {
       setIsKeypairValid(false);
+      setIsServerAuthenticated(false);
+      setAuthError(null);
     }
     return () => {
       active = false;
@@ -186,26 +211,38 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     publicKey &&
     publicKey.trim().length > 0 &&
     isKeypairValid &&
+    isServerAuthenticated &&
     isPaymentStatusPro &&
     !addHardwareKit
   );
 
   const handleProceedStep2 = async () => {
     setIsProcessing(true);
+    setStripeError(null);
     try {
-      // 1. Verify keypair matches
+      // 1. Verify keypair matches mathematically
       const keyMatch = isKeypairValid || (await validateKeyPair(publicKey, privateKey));
-
-      // 2. Fetch fresh tier directly from the users row in the database
-      const profile = await getUserProfile(publicKey.trim());
-      const currentTier = profile?.tier || dbTier;
-      if (profile?.tier) {
-        setDbTier(profile.tier);
+      if (!keyMatch) {
+        setIsProcessing(false);
+        setStripeError('Keypair mismatch: Private key does not correspond to public key.');
+        return;
       }
+
+      // 2. Authenticate against database salted private key hash
+      const authResult = await syncIdentityToServer({ publicKey, privateKey });
+      if (!authResult.success || !authResult.user) {
+        setIsProcessing(false);
+        setStripeError(authResult.error || 'Authentication rejected: Private key does not match database record.');
+        return;
+      }
+
+      // 3. Obtain verified tier directly from users row in database
+      const currentTier = authResult.user.tier || dbTier;
+      setDbTier(currentTier);
       const isPro = isProLicenseStatus(paymentStatusProp || currentTier);
 
       // If public key exists, private key matches, tier in DB is Pro License, and kit is unchecked:
-      if (publicKey.trim().length > 0 && keyMatch && isPro && !addHardwareKit) {
+      if (publicKey.trim().length > 0 && isPro && !addHardwareKit) {
         setIsProcessing(false);
         if (typeof window !== 'undefined') {
           if (window.location.pathname === '/scan') {
@@ -226,7 +263,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         // Free version, no kit: complete immediately
         const userProfile: UserProfile = {
           publicKey,
-          username: profile?.username || 'Shaggy',
+          username: authResult.user.username || 'Shaggy',
           tier: 'free',
           access: 'Alpha'
         };
@@ -241,8 +278,9 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         setIsProcessing(false);
         setStep(3);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error proceeding step 2:', err);
+      setStripeError(err?.message || 'Authentication error.');
       setIsProcessing(false);
     }
   };
@@ -394,9 +432,16 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                         </div>
                     </div>
 
+                    {authError && (
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-[10px] text-red-300 font-mono flex items-start gap-2 animate-in fade-in">
+                        <span className="material-symbols-rounded text-red-400 text-sm shrink-0">gpp_bad</span>
+                        <div>{authError}</div>
+                      </div>
+                    )}
+
                     <button 
-                        onClick={() => publicKey && country && setStep(2)}
-                        disabled={!publicKey || !country}
+                        onClick={() => publicKey && country && !authError && setStep(2)}
+                        disabled={!publicKey || !country || Boolean(authError)}
                         className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2"
                     >
                         Continue <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
@@ -501,9 +546,16 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                     </button>
                 </div>
 
+                {(stripeError || authError) && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-[10px] text-red-300 font-mono flex items-start gap-2 animate-in fade-in">
+                    <span className="material-symbols-rounded text-red-400 text-sm shrink-0">gpp_bad</span>
+                    <div>{stripeError || authError}</div>
+                  </div>
+                )}
+
                 <button 
                 onClick={handleProceedStep2}
-                disabled={isProcessing}
+                disabled={isProcessing || Boolean(authError)}
                 className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg mt-2 flex items-center justify-center gap-2"
                 >
                 {isProcessing 

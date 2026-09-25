@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { turso, initDatabase } from '@/services/turso';
 import { dbService } from '@/services/dbService';
+import { hashPrivateKey, verifyPrivateKeyHash } from '@/services/authSecurity';
 
 /**
  * Verifies ECDSA SHA-256 signature using SPKI public key in base64.
@@ -37,12 +38,12 @@ export function verifySignature(publicKeyB64: string, message: string, signature
 }
 
 /**
- * Challenge-response / Signature-based upsert endpoint for secure asymmetric authentication.
+ * Challenge-response / Signature-based upsert endpoint with salted private key hash verification.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { publicKey, signature, timestamp } = body;
+    const { publicKey, privateKey, signature, timestamp } = body;
 
     if (!publicKey || !signature || !timestamp) {
       return NextResponse.json(
@@ -60,31 +61,76 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify the client actually holds the private key for this public key
+    // 1. Verify the client signature cryptographically
     const message = `auth:${publicKey}:${timestamp}`;
-    const isValid = verifySignature(publicKey, message, signature);
+    const isValidSignature = verifySignature(publicKey, message, signature);
 
-    if (!isValid) {
+    if (!isValidSignature) {
       return NextResponse.json(
         { error: 'Invalid signature. Keypair mismatch or impersonation detected.' },
         { status: 403 }
       );
     }
 
-    // Upsert into Turso: insert new user or update last_login if verified
     await initDatabase();
-    await turso.execute({
-      sql: `INSERT INTO users (public_key, last_login)
-            VALUES (?, CURRENT_TIMESTAMP)
-            ON CONFLICT(public_key) DO UPDATE SET
-              last_login = CURRENT_TIMESTAMP`,
-      args: [publicKey],
+    const existingUser = await dbService.getUser(publicKey);
+
+    // 2. Actually determine private key matches salted hash in db (anti-impersonation)
+    if (existingUser) {
+      if (existingUser.privateKeyHash) {
+        if (!privateKey || !verifyPrivateKeyHash(privateKey, existingUser.privateKeyHash)) {
+          return NextResponse.json(
+            { error: 'Unauthorized: Private key does not match the registered salted hash in database. Impersonation rejected.' },
+            { status: 403 }
+          );
+        }
+      } else if (privateKey) {
+        // Populate salted hash for user registered prior to private_key_hash column
+        const saltedHash = hashPrivateKey(privateKey);
+        await dbService.upsertUser({
+          publicKey,
+          privateKeyHash: saltedHash,
+        });
+      }
+    } else {
+      // New user registration: store salted private key hash in users table
+      const saltedHash = privateKey ? hashPrivateKey(privateKey) : null;
+      await dbService.upsertUser({
+        publicKey,
+        privateKeyHash: saltedHash || undefined,
+        tier: 'free',
+        access: 'Alpha',
+      });
+    }
+
+    // Update last_login
+    await dbService.upsertUser({
+      publicKey,
+      lastLogin: new Date().toISOString(),
     });
 
     const user = await dbService.getUser(publicKey);
-    return NextResponse.json({ success: true, user });
+    if (!user) {
+      return NextResponse.json({ error: 'User could not be retrieved.' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: user.publicKey,
+        publicKey: user.publicKey,
+        username: user.username,
+        tier: user.tier,
+        access: user.access,
+        shippingName: user.shippingName,
+        shippingAddress: user.shippingAddress,
+        shippingCity: user.shippingCity,
+        shippingZip: user.shippingZip,
+      },
+    });
   } catch (error: any) {
     console.error('Sync identity endpoint error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

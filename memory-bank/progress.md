@@ -32,6 +32,8 @@
 - [x] Created Route Handler `app/api/auth/sync-identity/route.ts` for challenge-response signature verification with replay attack mitigation and dual IEEE P1363 / ASN.1 DER verification.
 - [x] Created `AuthStatusWidget.tsx` for My Account modal, and consolidated inline public and private key fields onto Page 1 of `CheckoutWizard.tsx` ("Unlock the Oracle."), removing duplicate widget section from homepage hero.
 - [x] Added cryptographic keypair validation (`validateKeyPair`) and database-driven `tier` verification in `CheckoutWizard.tsx`: users with verified matching keypair, Pro License tier in the TursoDB `users` row, and unchecked hardware kit bypass payment checkout and route directly to `/scan`.
+- [x] Added `private_key_hash` column to Drizzle ORM `users` schema and pushed to TursoDB via `drizzle-kit push`.
+- [x] Implemented salted PBKDF2 SHA-512 private key hashing (`services/authSecurity.ts`) and verified private key authenticity during `/api/auth/sync-identity` requests to prevent public key impersonation attacks.
 
 
 ---
