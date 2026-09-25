@@ -16,6 +16,9 @@
 ### 3. Payment Gateway Modernization
 - [x] Removed unvetted manual payment prompts (Cash App / Venmo tags) in `components/CheckoutWizard.tsx`.
 - [x] Implemented Stripe Checkout Session generation in `app/api/checkout/create-session/route.ts`.
+- [x] Configured post-checkout success redirect to `/scan?payment=success&session_id={CHECKOUT_SESSION_ID}`.
+- [x] Added `/api/checkout/verify-session` to authenticate customer and activate `unlimited` tier on redirect.
+- [x] Created `/scan` permalink for the forensic Test Suite (`app/scan/page.tsx`).
 - [x] Implemented Stripe webhook listener in `app/api/webhook/stripe/route.ts` with raw-body signature verification and idempotent transaction logging.
 
 ### 4. Edge Validation & Forensic Pipeline

@@ -15,6 +15,9 @@
 ## Recent Decisions & Invariants
 1. **Drizzle + Turso**: Using SQLite/libSQL parameterized models to enforce data immutability and isolate scan records by user identity.
 2. **Stripe Webhook Idempotency**: Storing `stripe_session_id` in the `transactions` table to prevent double crediting upon webhook redelivery.
-3. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons (`lucide-react`) across all diagnostic screens.
-4. **Project Instructions Alignment**: Synchronized `GEMINI.md` operational mandate to accurately reflect Next.js App Router route handlers (`app/api/`) and Drizzle ORM instead of legacy Express/Vite.
-5. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+3. **Stripe Post-Checkout Redirect & Auth**: Success redirect configured to `/scan?payment=success&session_id={CHECKOUT_SESSION_ID}`. The `/api/checkout/verify-session` route authenticates the customer, activates the `unlimited` tier, and sets state in `localStorage` before smoothly entering the forensic test suite.
+4. **Dedicated Test Suite Permalink (`/scan`)**: Provided direct route at `/scan` (via `app/scan/page.tsx`) to mount the forensic test suite directly.
+5. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons (`lucide-react`) across all diagnostic screens.
+6. **Project Instructions Alignment**: Synchronized `GEMINI.md` operational mandate to accurately reflect Next.js App Router route handlers (`app/api/`) and Drizzle ORM instead of legacy Express/Vite.
+7. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+

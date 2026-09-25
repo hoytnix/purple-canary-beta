@@ -18,8 +18,12 @@ import { seedScansIfEmpty } from './services/firestoreService';
 
 type ViewState = 'LANDING' | 'WORKFLOW';
 
-const WorkflowEngine = () => {
-  const [view, setView] = useState<ViewState>('LANDING');
+interface WorkflowEngineProps {
+  initialView?: ViewState;
+}
+
+export const WorkflowEngine: React.FC<WorkflowEngineProps> = ({ initialView = 'LANDING' }) => {
+  const [view, setView] = useState<ViewState>(initialView);
   const [phase, setPhase] = useState<WorkflowPhase>('CALIBRATION');
   const [showSOP, setShowSOP] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -30,6 +34,39 @@ const WorkflowEngine = () => {
   useEffect(() => {
     getOrCreateIdentity();
     seedScansIfEmpty().catch(err => console.error('Seeding error:', err));
+
+    // Handle payment return parameters
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+      const sessionId = urlParams.get('session_id');
+
+      if (paymentStatus === 'success' && sessionId) {
+        // Authenticate & activate unlimited tier
+        fetch(`/api/checkout/verify-session?session_id=${encodeURIComponent(sessionId)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.userId) {
+              localStorage.setItem('pc_onboarding_email', data.userId);
+            }
+            if (data.tier) {
+              localStorage.setItem('pc_user_tier', data.tier);
+            }
+            window.dispatchEvent(new Event('storage'));
+            // Remove search params cleanly without reload
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+          })
+          .catch(err => {
+            console.error('Session verification error:', err);
+            // Fallback: unlock unlimited tier directly
+            localStorage.setItem('pc_user_tier', 'unlimited');
+            window.dispatchEvent(new Event('storage'));
+          });
+
+        setView('WORKFLOW');
+      }
+    }
   }, []);
 
   const handleReset = () => {
@@ -97,10 +134,10 @@ const WorkflowEngine = () => {
   );
 };
 
-export default function App() {
+export default function App({ initialView = 'LANDING' }: { initialView?: ViewState }) {
   return (
     <ScannerProvider>
-      <WorkflowEngine />
+      <WorkflowEngine initialView={initialView} />
     </ScannerProvider>
   );
 }

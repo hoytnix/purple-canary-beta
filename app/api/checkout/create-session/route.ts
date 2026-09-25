@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       client_reference_id: userId,
       line_items,
-      success_url: `${origin}/my-account?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/scan?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout?payment=cancelled`,
     });
 
