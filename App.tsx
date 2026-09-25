@@ -13,7 +13,7 @@ import { PhaseSelection } from './components/workflow/PhaseSelection';
 import { PhaseCapture } from './components/workflow/PhaseCapture';
 import { PhaseAnalysis } from './components/workflow/PhaseAnalysis';
 import { PhaseReport } from './components/workflow/PhaseReport';
-import { getOrCreateIdentity } from './services/identity';
+import { getOrCreateIdentity, syncIdentityToServer } from './services/identity';
 
 type ViewState = 'LANDING' | 'WORKFLOW';
 
@@ -44,7 +44,7 @@ export const WorkflowEngine: React.FC<WorkflowEngineProps> = ({ initialView = 'L
         // Authenticate & activate unlimited tier
         fetch(`/api/checkout/verify-session?session_id=${encodeURIComponent(sessionId)}`)
           .then(res => res.json())
-          .then(data => {
+          .then(async (data) => {
             if (data.userId) {
               localStorage.setItem('pc_public_key', data.userId);
             }
@@ -52,6 +52,15 @@ export const WorkflowEngine: React.FC<WorkflowEngineProps> = ({ initialView = 'L
               localStorage.setItem('pc_user_tier', data.tier);
             }
             window.dispatchEvent(new Event('storage'));
+
+            // Ensure the user's privateKeyHash is guaranteed synced to their row
+            try {
+              const identity = await getOrCreateIdentity();
+              await syncIdentityToServer(identity, { registerIfMissing: true, tier: data.tier || 'unlimited' });
+            } catch (syncErr) {
+              console.error('Post-checkout identity sync error:', syncErr);
+            }
+
             // Remove search params cleanly without reload
             const cleanUrl = window.location.pathname;
             window.history.replaceState({}, document.title, cleanUrl);

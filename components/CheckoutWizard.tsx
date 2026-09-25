@@ -278,6 +278,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: publicKey,
+          privateKey,
           priceId: 'price_XXXXX', // Stripe Price ID
           amount: total,
           productName: addHardwareKit

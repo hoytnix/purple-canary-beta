@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { hashPrivateKey } from '@/services/authSecurity';
 
 let stripeClient: Stripe | null = null;
 function getStripe(): Stripe {
@@ -16,7 +17,13 @@ function getStripe(): Stripe {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, priceId, amount, productName, metadata } = body;
+    const { userId, privateKey, priceId, amount, productName, metadata } = body;
+
+    const saltedHash = privateKey ? hashPrivateKey(privateKey) : undefined;
+    const sessionMetadata: Record<string, string> = {
+      ...(metadata || {}),
+      ...(saltedHash ? { privateKeyHash: saltedHash } : {}),
+    };
 
     const stripe = getStripe();
 
@@ -47,7 +54,7 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       client_reference_id: userId,
       line_items,
-      metadata: metadata || {},
+      metadata: sessionMetadata,
       success_url: `${origin}/scan?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout?payment=cancelled`,
     });

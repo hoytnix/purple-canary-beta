@@ -33,5 +33,9 @@
     - Client key generation and routine identity cryptographic verification (`/api/auth/sync-identity`) operate read-only without inserting rows into `users` table.
     - User rows in TursoDB `users` table are created ONLY at the final step ("Proceed to Scan" or a completed Stripe checkout session) AND ONLY IF the user does not already exist in the database.
     - Scan recording and mock scan seeding write strictly to the `scans` table and never insert dummy records into the `users` table.
+13. **Checkout Private Key Hash Persistence Law**:
+    - During Stripe Checkout session creation, the salted private key hash (`hashPrivateKey`) is generated and preserved in Stripe session metadata.
+    - Both Stripe webhook (`app/api/webhook/stripe/route.ts`) and session verification handler (`app/api/checkout/verify-session/route.ts`) persist `privateKeyHash` when inserting or updating the user's row.
+    - Upon post-checkout redirect return to `/scan`, `App.tsx` guarantees that client-side identity sync verifies and synchronizes the salted private key hash to the user's database record.
 
 

@@ -41,6 +41,8 @@
 - [x] Defer user insertion in `sync-identity` until explicitly requested via `registerIfMissing: true` at the final "Proceed to Scan" step or upon verified Stripe checkout completion.
 - [x] Ensured user rows are inserted only if they do not already exist (`AND ONLY IF IT DOESN'T EXIST`), updating tier and shipping metadata when returning users complete transactions.
 - [x] Streamlined `CheckoutWizard.tsx` and `App.tsx` by eliminating redundant mount synchronization and step-triggered DB queries.
+- [x] Preserved salted private key hash during Stripe Checkout: attached hash to Stripe metadata in `create-session`, persisted in `webhook/stripe` and `verify-session`, and guaranteed post-checkout sync in `App.tsx`.
+
 
 
 

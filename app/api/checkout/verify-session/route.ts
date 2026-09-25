@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
         if (!existingUser) {
           await dbService.upsertUser({
             publicKey: userId,
+            privateKeyHash: meta.privateKeyHash || null,
             username: meta.username || 'Shaggy',
             tier: 'unlimited',
             access: 'Alpha',
@@ -60,6 +61,7 @@ export async function GET(req: NextRequest) {
           await dbService.upsertUser({
             publicKey: userId,
             tier: 'unlimited',
+            ...(meta.privateKeyHash && !existingUser.privateKeyHash && { privateKeyHash: meta.privateKeyHash }),
             ...(meta.shippingName && { shippingName: meta.shippingName }),
             ...(meta.shippingAddress && { shippingAddress: meta.shippingAddress }),
             ...(meta.shippingCity && { shippingCity: meta.shippingCity }),
