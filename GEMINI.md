@@ -14,8 +14,8 @@ Before executing ANY user prompt, generating ANY code, answering questions, or p
    Inspect and load the contents of:
    * `memory-bank/projectbrief.md` (Core goals: field-ready colorimetric substance analysis PWA, harm reduction reagent screening, decentralized client-side computer vision, privacy-first offline operation, transition to TursoDB & Stripe)
    * `memory-bank/productContext.md` (Multi-phase guided workflow: capture, crop, colorimetric extraction, anchor matrix matching, PDF/JSON forensic reporting, user credits/subscriptions)
-   * `memory-bank/systemPatterns.md` (Vite + React single-page PWA architecture, Express backend server `server.ts`, Cloudflare Worker edge proxy, TursoDB libSQL repository pattern replacing Firebase/Firestore, Stripe webhook processing)
-   * `memory-bank/techContext.md` (Vite, React 19, TypeScript, Tailwind CSS, Lucide React, Canvas API/CV utilities, `@libsql/client`, Stripe Node SDK, Cloudflare Workers/Wrangler)
+   * `memory-bank/systemPatterns.md` (Next.js 16 App Router + React 19 architecture, Next.js API route handlers `app/api/`, Cloudflare Worker edge proxy, TursoDB libSQL repository pattern with Drizzle ORM replacing Firebase/Firestore, Stripe webhook processing)
+   * `memory-bank/techContext.md` (Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, Lucide React, Canvas API/CV utilities, `@libsql/client`, Drizzle ORM, Stripe Node SDK, Cloudflare Workers/Wrangler)
    * `memory-bank/activeContext.md` (Active work stream: Firebase-to-TursoDB migration, replacing manual Cash App/Venmo flows with Stripe Checkout, camera auto-capture tuning, signature database syncing)
    * `memory-bank/progress.md` (Migration status from Firestore to Turso, Stripe webhook verification, computer vision matching accuracy, known worker/camera issues, roadmap)
 
@@ -40,7 +40,7 @@ You operate strictly under one of two modes based on task complexity:
 * **Step 3:** Present your proposed approach cleanly in Markdown and request confirmation or proceed based on user intent.
 
 #### B. ACT MODE
-*Triggered for direct code generation, bug fixes, schema/migration scripts, Express endpoint updates (`server.ts`), worker fixes (`cloudflare-worker/src/index.ts`), or UI component edits.*
+*Triggered for direct code generation, bug fixes, schema/migration scripts, Next.js API route updates (`app/api/`), worker fixes (`cloudflare-worker/src/index.ts`), or UI component edits.*
 * **Step 1:** Cross-reference requested code changes against `techContext.md` constraints, `systemPatterns.md` standards, and active database schemas.
 * **Step 2:** Execute the task or generate the requested code with precision and zero unrequested boilerplate. **BUILT-IN TOOL RULE**: ALWAYS use built-in tools (`write_to_file`, `replace_file_content`) to create, overwrite, or edit files. NEVER use shell commands such as `cat`, `echo`, heredocs, or shell redirection via `run_command` to create or modify files.
 * **Step 3:** **GREP AND FIND LINE-COUNT RESTRICTION RULE**: Whenever using terminal search utilities like `grep`, `find`, or shell search commands, the output MUST be strictly scoped to return at most **30 lines per request** (e.g., pipe to `head -n 30` or use specific directory paths and strict line counts). NEVER execute unbounded or overly permissive searches that flood context or incur high token costs.
@@ -64,7 +64,7 @@ You operate strictly under one of two modes based on task complexity:
 
 3. **Stripe Direct Checkout & Idempotency Standard**:
    * Deprecate manual peer-to-peer payment prompts (Cash App / Venmo tags) in `CheckoutWizard.tsx` in favor of official Stripe Checkout sessions and customer portal redirection.
-   * Webhook handlers in `server.ts` MUST verify `stripe-signature` using `process.env.STRIPE_WEBHOOK_SECRET` with raw body parsing before fulfilling credits or activating subscription tiers.
+   * Webhook handlers in `app/api/webhook/stripe/route.ts` MUST verify `stripe-signature` using `process.env.STRIPE_WEBHOOK_SECRET` with raw body parsing before fulfilling credits or activating subscription tiers.
    * Webhook fulfillment must be idempotent: store processed `stripe_session_id` records in TursoDB to prevent double-crediting.
 
 4. **Multi-Phase Workflow Integrity**:
@@ -82,9 +82,9 @@ You operate strictly under one of two modes based on task complexity:
 ---
 
 ### TECH CONSTRAINTS & CLI CHEATSHEET
-* **Frontend**: Vite, React 19, TypeScript, Tailwind CSS, Lucide React.
-* **Backend / Edge**: Node.js / Express (`server.ts`), Cloudflare Worker (`cloudflare-worker/src/index.ts`).
-* **Database**: TursoDB (`@libsql/client`), replacing Firebase Firestore.
+* **Frontend**: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Lucide React.
+* **Backend / Edge**: Next.js Route Handlers (`app/api/`), Cloudflare Worker (`cloudflare-worker/src/index.ts`).
+* **Database**: TursoDB (`@libsql/client`) with Drizzle ORM, replacing Firebase Firestore.
 * **Payments**: Stripe (`stripe` SDK, Stripe Checkout Sessions, webhooks).
 * **Package Manager**: `npm`. Use `npm run build` or `npx tsc --noEmit` to verify type and build integrity.
 * **Typecheck Command**: ALWAYS use `npx tsc --noEmit`.

@@ -16,4 +16,5 @@
 1. **Drizzle + Turso**: Using SQLite/libSQL parameterized models to enforce data immutability and isolate scan records by user identity.
 2. **Stripe Webhook Idempotency**: Storing `stripe_session_id` in the `transactions` table to prevent double crediting upon webhook redelivery.
 3. **Responsive 375px Constraint**: Enforcing high-contrast dark mode and SVG icons (`lucide-react`) across all diagnostic screens.
-4. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+4. **Project Instructions Alignment**: Synchronized `GEMINI.md` operational mandate to accurately reflect Next.js App Router route handlers (`app/api/`) and Drizzle ORM instead of legacy Express/Vite.
+5. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.

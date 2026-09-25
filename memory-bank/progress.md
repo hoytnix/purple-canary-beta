@@ -5,6 +5,7 @@
 ### 1. Architecture & Framework Migration
 - [x] Ported application from legacy single-page bundle to Next.js App Router with React 19 and Tailwind CSS v4.
 - [x] Established server route handlers under `app/api/` for users, scans, checkout sessions, and webhooks.
+- [x] Synchronized `GEMINI.md` project mandates and tech constraints to match Next.js App Router and Drizzle ORM.
 
 ### 2. Database Modernization (Firebase -> TursoDB & Drizzle ORM)
 - [x] Defined relational schema in `services/schema.ts` (`users`, `scans`, `transactions`, `subscriptions`).
