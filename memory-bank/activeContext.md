@@ -47,8 +47,13 @@
     - Implemented a singleton generation lock (`inFlightGenerationPromise`) in `services/identity.ts` to ensure concurrent calls share the exact same keypair generation promise.
     - Added self-healing validation in `getOrCreateIdentity()`: mathematically tests existing keypairs via `validateKeyPair`; if corrupted or mismatched, automatically clears and generates a fresh, matching pair.
     - Added window `storage` event listeners in `CheckoutWizard.tsx` to keep all wizard instances synchronized.
-    - Implemented pre-checkout user insertion in `/api/checkout/create-session`: user row is inserted into TursoDB immediately before Stripe redirection with `tier: 'free'` and salted `privateKeyHash`, and updated to `tier: 'unlimited'` upon successful payment completion.
-    - Prevented `App.tsx` post-checkout redirect handler from desynchronizing public key in `localStorage`.
+16. **Tier-Gated Root Admin Dashboard (`/admin`)**:
+    - Built a forensic-grade, cybernetic Admin Dashboard accessible strictly at `/admin` (`app/admin/page.tsx` & `components/admin/AdminDashboard.tsx`).
+    - **Strict Tier Enforcement**: Accessible only when the requesting node's `tier` column in TursoDB is strictly `'admin'`. If a user attempts access with another tier (e.g., `'free'`, `'unlimited'`), they are blocked by a 403 Restricted Terminal lockscreen with instructions on how an existing admin or CLI can promote their public key.
+    - **Cryptographic Server-Side Authentication**: All administrative API endpoints under `app/api/admin/` (`auth-check`, `stats`, `users`, `scans`, `transactions`) are guarded by `authenticateAdminRequest` in `services/adminAuth.ts`. Requesters must sign an `admin-auth:${publicKey}:${timestamp}` challenge via ECDSA P-256 (within a 5-minute replay window), and their TursoDB record is verified to have `tier === 'admin'`.
+    - **Features**: Live KPI stat cards (users, scans, threat interceptions, gross revenue), threat spectrum distribution meter, real-time node registry with interactive tier promotion/mutation (`admin`, `unlimited`, `pro`, `free`), forensic scan ledger with deep JSON spectrum inspector modal, Stripe payment ledger, and auditable JSON backup exporter.
+    - **CLI Operator Tool**: Created `scripts/setAdminTier.ts` (`pnpm tsx scripts/setAdminTier.ts set <pubkey> admin`) for direct TursoDB user tier management.
+    - **Package Manager Standard**: Mandated `pnpm` across all builds, scripts, and workflows.
 
 
 

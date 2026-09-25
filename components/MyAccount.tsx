@@ -149,7 +149,20 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
                           </div>
                           
                           {/* Dynamic License badge */}
-                          {localStorage.getItem('pc_user_tier') === 'unlimited' ? (
+                          {localStorage.getItem('pc_user_tier') === 'admin' ? (
+                              <div className="flex flex-col gap-1.5">
+                                  <div className="flex items-center gap-2 text-[9px] font-mono font-bold text-neon-cyan uppercase tracking-wider bg-ultra-violet/30 px-2 py-1 rounded border border-neon-cyan/40 w-fit shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+                                      <span className="material-symbols-rounded text-[11px]">admin_panel_settings</span> Root Administrator
+                                  </div>
+                                  <button 
+                                      onClick={() => { onClose(); window.location.href = '/admin'; }}
+                                      className="text-[8px] font-black uppercase text-neon-cyan hover:text-white tracking-wider bg-neon-cyan/20 hover:bg-neon-cyan/40 border border-neon-cyan/50 px-2 py-1 rounded transition-all cursor-pointer w-fit flex items-center gap-1 shadow-sm"
+                                  >
+                                      <span className="material-symbols-rounded text-[10px]">terminal</span>
+                                      Launch Root Console &rarr;
+                                  </button>
+                              </div>
+                          ) : localStorage.getItem('pc_user_tier') === 'unlimited' ? (
                               <div className="flex items-center gap-2 text-[9px] font-mono font-bold text-green-400 uppercase tracking-wider bg-green-500/10 px-2 py-1 rounded border border-green-500/20 w-fit">
                                   <span className="material-symbols-rounded text-[11px]">workspace_premium</span> Pro Unlimited
                               </div>

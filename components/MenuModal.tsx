@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface MenuModalProps {
   onClose: () => void;
@@ -10,6 +10,13 @@ interface MenuModalProps {
 }
 
 export const MenuModal: React.FC<MenuModalProps> = ({ onClose, onOpenSOP, onOpenLibrary, onOpenHome }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAdmin(localStorage.getItem('pc_user_tier') === 'admin');
+    }
+  }, []);
   return (
     <div className="fixed inset-0 z-50 bg-[#1a052b]/95 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-200">
       
@@ -68,6 +75,25 @@ export const MenuModal: React.FC<MenuModalProps> = ({ onClose, onOpenSOP, onOpen
             <div className="text-[10px] font-mono text-gray-400 group-hover:text-gray-300">Spectral Signatures</div>
           </div>
         </button>
+
+        {/* Admin Console (Elevated Clearance) */}
+        {isAdmin && (
+          <button 
+            onClick={() => { onClose(); window.location.href = '/admin'; }}
+            className="w-full p-4 bg-gradient-to-r from-ultra-violet/30 to-neon-cyan/20 border border-neon-cyan/40 rounded-2xl flex items-center gap-4 group hover:border-neon-cyan transition-all active:scale-[0.98] shadow-[0_0_15px_rgba(0,255,255,0.15)]"
+          >
+            <div className="p-3 bg-neon-cyan/20 rounded-xl text-neon-cyan group-hover:bg-neon-cyan group-hover:text-black transition-colors">
+              <span className="material-symbols-rounded text-[24px]">admin_panel_settings</span>
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <span>Root Console</span>
+                <span className="px-1.5 py-0.5 rounded text-[8px] bg-neon-cyan text-black font-bold font-mono">ADMIN</span>
+              </div>
+              <div className="text-[10px] font-mono text-neon-cyan/80 group-hover:text-neon-cyan">TursoDB & Telemetry</div>
+            </div>
+          </button>
+        )}
 
       </div>
       

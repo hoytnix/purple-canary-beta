@@ -316,5 +316,165 @@ export const dbService = {
         resultData: typeof seed.resultData === 'string' ? seed.resultData : JSON.stringify(seed.resultData),
       });
     }
+  },
+
+  async getAllUsers(): Promise<UserRecord[]> {
+    await initDatabase();
+    const rows = await db.select().from(users).orderBy(desc(users.createdAt));
+    return rows.map((row) => ({
+      publicKey: row.publicKey,
+      id: row.publicKey,
+      privateKeyHash: row.privateKeyHash ?? undefined,
+      nonce: Number(row.nonce ?? 0),
+      stripeCustomerId: row.stripeCustomerId ?? undefined,
+      username: row.username ?? 'Shaggy',
+      tier: row.tier ?? 'free',
+      access: row.access ?? 'Alpha',
+      shippingName: row.shippingName ?? undefined,
+      shippingAddress: row.shippingAddress ?? undefined,
+      shippingCity: row.shippingCity ?? undefined,
+      shippingZip: row.shippingZip ?? undefined,
+      createdAt: row.createdAt ?? undefined,
+      lastLogin: row.lastLogin ?? undefined,
+    }));
+  },
+
+  async updateUserTier(publicKey: string, tier: string): Promise<void> {
+    await initDatabase();
+    await db.update(users).set({ tier }).where(eq(users.publicKey, publicKey));
+  },
+
+  async updateUser(publicKey: string, updates: Partial<UserRecord>): Promise<void> {
+    await initDatabase();
+    const setValues: any = {};
+    if (updates.tier !== undefined) setValues.tier = updates.tier;
+    if (updates.username !== undefined) setValues.username = updates.username;
+    if (updates.access !== undefined) setValues.access = updates.access;
+    if (updates.shippingName !== undefined) setValues.shippingName = updates.shippingName;
+    if (updates.shippingAddress !== undefined) setValues.shippingAddress = updates.shippingAddress;
+    if (updates.shippingCity !== undefined) setValues.shippingCity = updates.shippingCity;
+    if (updates.shippingZip !== undefined) setValues.shippingZip = updates.shippingZip;
+    if (Object.keys(setValues).length > 0) {
+      await db.update(users).set(setValues).where(eq(users.publicKey, publicKey));
+    }
+  },
+
+  async getAllScansDetailed(limitCount = 100, offset = 0): Promise<{ items: any[]; totalCount: number }> {
+    await initDatabase();
+    const countRes = await db.select({ count: sql<number>`count(*)` }).from(scans);
+    const totalCount = Number(countRes[0]?.count || 0);
+
+    const rows = await db
+      .select()
+      .from(scans)
+      .orderBy(desc(scans.createdAt))
+      .limit(limitCount)
+      .offset(offset);
+
+    const items = rows.map((r) => {
+      let parsedData: any = {};
+      try {
+        parsedData = r.resultData ? JSON.parse(r.resultData) : {};
+      } catch {
+        parsedData = {};
+      }
+      return {
+        id: r.id,
+        shortId: r.id.substring(0, 10).toUpperCase(),
+        userId: r.userId,
+        substanceName: r.substanceName || parsedData.verdict || 'Unknown',
+        date: parsedData.date || r.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+        location: parsedData.location || 'Unknown Field Lab',
+        verdict: parsedData.verdict || 'CLEAN',
+        matrix: parsedData.matrix || 'SOLID_CRYSTAL',
+        detections: parsedData.detections || [],
+        createdAt: r.createdAt || parsedData.createdAt || new Date().toISOString(),
+        shortDescription: parsedData.shortDescription,
+        longDescription: parsedData.longDescription,
+        rawResult: parsedData,
+      };
+    });
+
+    return { items, totalCount };
+  },
+
+  async getAllTransactions(limitCount = 100): Promise<any[]> {
+    await initDatabase();
+    const rows = await db
+      .select()
+      .from(transactions)
+      .orderBy(desc(transactions.createdAt))
+      .limit(limitCount);
+    return rows;
+  },
+
+  async getAdminStats(): Promise<{
+    users: { total: number; admin: number; unlimited: number; pro: number; free: number };
+    scans: { total: number; clean: number; warning: number; highRisk: number; lethal: number };
+    transactions: { total: number; grossVolume: number };
+    recentActivity: any[];
+  }> {
+    await initDatabase();
+    const allUsers = await db.select().from(users);
+    const allScans = await db.select().from(scans).orderBy(desc(scans.createdAt));
+    const allTx = await db.select().from(transactions);
+
+    const userStats = {
+      total: allUsers.length,
+      admin: allUsers.filter((u) => u.tier === 'admin').length,
+      unlimited: allUsers.filter((u) => u.tier === 'unlimited').length,
+      pro: allUsers.filter((u) => u.tier === 'pro').length,
+      free: allUsers.filter((u) => !u.tier || u.tier === 'free').length,
+    };
+
+    let cleanCount = 0;
+    let warningCount = 0;
+    let highRiskCount = 0;
+    let lethalCount = 0;
+
+    for (const s of allScans) {
+      let data: any = {};
+      try {
+        data = s.resultData ? JSON.parse(s.resultData) : {};
+      } catch {}
+      const v = (data.verdict || s.substanceName || '').toUpperCase();
+      if (v.includes('LETHAL') || v.includes('CRITICAL')) lethalCount++;
+      else if (v.includes('HIGH') || v.includes('RISK')) highRiskCount++;
+      else if (v.includes('WARN')) warningCount++;
+      else cleanCount++;
+    }
+
+    const txStats = {
+      total: allTx.length,
+      grossVolume: allTx.reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0) / 100,
+    };
+
+    const recentActivity = allScans.slice(0, 10).map((r) => {
+      let parsedData: any = {};
+      try {
+        parsedData = r.resultData ? JSON.parse(r.resultData) : {};
+      } catch {}
+      return {
+        id: r.id,
+        userId: r.userId,
+        substance: r.substanceName || parsedData.verdict || 'Sample',
+        verdict: parsedData.verdict || 'CLEAN',
+        location: parsedData.location || 'Field Lab',
+        createdAt: r.createdAt,
+      };
+    });
+
+    return {
+      users: userStats,
+      scans: {
+        total: allScans.length,
+        clean: cleanCount,
+        warning: warningCount,
+        highRisk: highRiskCount,
+        lethal: lethalCount,
+      },
+      transactions: txStats,
+      recentActivity,
+    };
   }
 };

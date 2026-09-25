@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -7,6 +7,13 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMenu, onOpenAccount }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAdmin(localStorage.getItem('pc_user_tier') === 'admin');
+    }
+  }, []);
   return (
     <header className="w-full flex items-center justify-between gap-4 py-1">
         {/* Left Action - Account PFP */}
@@ -48,14 +55,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMenu, onOpenAccount }) => 
           </div>
         </div>
 
-        {/* Right Action - Hamburger Menu */}
-        <button 
-          onClick={onOpenMenu}
-          className="p-2 bg-ultra-violet/10 border border-ultra-violet/30 rounded-lg hover:bg-ultra-violet/20 transition-all active:scale-90 group"
-          title="Menu"
-        >
-          <span className="material-symbols-rounded text-[20px] text-ultra-violet group-hover:text-white transition-colors">menu</span>
-        </button>
+        {/* Right Action - Admin Badge & Hamburger Menu */}
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={() => (window.location.href = '/admin')}
+              className="px-2 py-1 bg-ultra-violet/20 border border-neon-cyan/40 rounded-lg hover:bg-neon-cyan/20 transition-all flex items-center gap-1 text-[10px] font-mono text-neon-cyan font-bold shadow-[0_0_10px_rgba(0,255,255,0.2)]"
+              title="Root Admin Console"
+            >
+              <span className="material-symbols-rounded text-[14px]">admin_panel_settings</span>
+              <span className="hidden sm:inline">ADMIN</span>
+            </button>
+          )}
+
+          <button 
+            onClick={onOpenMenu}
+            className="p-2 bg-ultra-violet/10 border border-ultra-violet/30 rounded-lg hover:bg-ultra-violet/20 transition-all active:scale-90 group"
+            title="Menu"
+          >
+            <span className="material-symbols-rounded text-[20px] text-ultra-violet group-hover:text-white transition-colors">menu</span>
+          </button>
+        </div>
     </header>
   );
 };

@@ -35,10 +35,12 @@
 - **Integration**: Stripe Checkout Sessions with raw body webhook verification (`process.env.STRIPE_WEBHOOK_SECRET`)
 
 ## Development & Verification Cheatsheet
-- **Dev Server**: `npm run dev`
-- **Typecheck**: `npx tsc --noEmit`
-- **Production Build**: `npm run build`
-- **Database Migrations**: `npm run db:push` / `npm run db:generate`
+- **Package Manager**: `pnpm` (MANDATORY: always use pnpm instead of npm)
+- **Dev Server**: `pnpm dev`
+- **Typecheck**: `npx tsc --noEmit --incremental false`
+- **Production Build**: `pnpm build`
+- **Database Migrations**: `pnpm db:push` / `pnpm db:generate`
+- **Admin Tier CLI**: `pnpm tsx scripts/setAdminTier.ts`
 
 ## Environment Variables
 - `TURSO_DATABASE_URL`: Turso libSQL connection URL (e.g. `libsql://...` or `file:local.db`)

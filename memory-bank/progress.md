@@ -50,9 +50,16 @@
 - [x] Added singleton promise lock and self-healing mathematical keypair validation in `services/identity.ts` (`getOrCreateIdentity`) to prevent race conditions and keypair mismatch lockouts across multiple `CheckoutWizard` components.
 - [x] Added storage event listener in `CheckoutWizard.tsx` to keep all wizard instances synchronized.
 
-
-
-
+### 7. Root Admin Dashboard & Tier Gate
+- [x] Created cybernetic Admin Dashboard at `/admin` (`app/admin/page.tsx`, `components/admin/AdminDashboard.tsx`) with dark forensic aesthetic, glowing badges, and responsive layouts down to 375px.
+- [x] Enforced strict access control: accessible strictly when the user's `tier` column in TursoDB is `'admin'`.
+- [x] Designed high-security 403 Restricted Terminal lockscreen with public key display and promotion instructions for unauthorized nodes.
+- [x] Deployed cryptographically signed administrative route handlers under `app/api/admin/` (`auth-check`, `stats`, `users`, `scans`, `transactions`) guarded by `authenticateAdminRequest` in `services/adminAuth.ts`.
+- [x] Added `dbService` admin methods: `getAllUsers`, `updateUserTier`, `updateUser`, `getAllScansDetailed`, `getAllTransactions`, `getAdminStats`.
+- [x] Integrated client-side `adminService.ts` with ECDSA challenge signing.
+- [x] Linked Admin Console in `MenuModal.tsx`, `Header.tsx`, and `MyAccount.tsx` when user possesses `admin` tier.
+- [x] Built developer CLI tool `scripts/setAdminTier.ts` for listing, inspecting, and promoting node tiers in TursoDB.
+- [x] Standardized package manager on `pnpm` across builds and scripts.
 
 ---
 
