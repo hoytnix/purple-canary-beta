@@ -50,7 +50,7 @@ export async function getScanRecords(publicKey: string): Promise<ScanRecord[]> {
   }
 }
 
-// Live subscriber for scan records (polls backend)
+// Fetch scan records once (no periodic polling)
 export function subscribeScanRecords(publicKey: string, callback: (records: ScanRecord[]) => void) {
   let isSubscribed = true;
 
@@ -67,15 +67,13 @@ export function subscribeScanRecords(publicKey: string, callback: (records: Scan
   };
 
   fetchRecords();
-  const interval = setInterval(fetchRecords, 5000);
 
   return () => {
     isSubscribed = false;
-    clearInterval(interval);
   };
 }
 
-// Live subscriber for ALL latest scan records across the network
+// Fetch latest scan records across the network once per page load (NO periodic polling)
 export function subscribeAllLatestScanRecords(
   callback: (data: { items: any[]; totalScans: number; uniquePublicKeys: number }) => void,
   limitCount: number = 30
@@ -96,11 +94,9 @@ export function subscribeAllLatestScanRecords(
   };
 
   fetchLatest();
-  const interval = setInterval(fetchLatest, 4000);
 
   return () => {
     isSubscribed = false;
-    clearInterval(interval);
   };
 }
 

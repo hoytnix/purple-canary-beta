@@ -1,6 +1,6 @@
 import { db, initDatabase } from './turso';
 import { users, scans, transactions } from './schema';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, inArray } from 'drizzle-orm';
 
 export interface UserRecord {
   publicKey: string;
@@ -86,14 +86,6 @@ export const dbService = {
 
   async recordScan(scan: { id: string; userId: string; substanceName?: string; resultData: any }): Promise<void> {
     await initDatabase();
-    // Ensure parent user exists
-    await db
-      .insert(users)
-      .values({
-        publicKey: scan.userId,
-      })
-      .onConflictDoNothing();
-
     await db.insert(scans).values({
       id: scan.id,
       userId: scan.userId,
@@ -133,6 +125,7 @@ export const dbService = {
 
   async getAllLatestScans(limitCount = 30): Promise<{ items: any[]; totalScans: number; uniquePublicKeys: number }> {
     await initDatabase();
+    await this.seedScansIfEmpty();
     const allRows = await db
       .select()
       .from(scans)
@@ -170,13 +163,6 @@ export const dbService = {
 
   async recordTransaction(tx: { id: string; userId: string; stripeSessionId: string; amount: number; status: string }): Promise<void> {
     await initDatabase();
-    await db
-      .insert(users)
-      .values({
-        publicKey: tx.userId,
-      })
-      .onConflictDoNothing();
-
     await db.insert(transactions).values({
       id: tx.id,
       userId: tx.userId,
@@ -184,7 +170,7 @@ export const dbService = {
       amount: tx.amount,
       currency: 'usd',
       status: tx.status,
-    });
+    }).onConflictDoNothing();
   },
 
   async seedScansIfEmpty(): Promise<void> {
@@ -306,8 +292,29 @@ export const dbService = {
       }
     ];
 
+    // Purge legacy dummy seed keys accidentally placed in users table
+    const dummySeedKeys = [
+      '0x99aabbccddeeff11',
+      '0x8f00ff00ffff99aa',
+      '0x3a2b4c5d6e7f8901',
+      '0x1122334455667788',
+      '0x55aa55aa55aa55aa',
+      '0x77bb88cc99ddaaee',
+      '0x44332211eeddccbb',
+    ];
+    try {
+      await db.delete(users).where(inArray(users.publicKey, dummySeedKeys));
+    } catch {
+      // Ignore if table does not exist yet
+    }
+
     for (const seed of seeds) {
-      await dbService.recordScan(seed);
+      await db.insert(scans).values({
+        id: seed.id,
+        userId: seed.userId,
+        substanceName: seed.substanceName || null,
+        resultData: typeof seed.resultData === 'string' ? seed.resultData : JSON.stringify(seed.resultData),
+      });
     }
   }
 };

@@ -9,7 +9,7 @@ interface LoginOverlayProps {
 }
 
 export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }) => {
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPublicKey, setLoginPublicKey] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -17,20 +17,19 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }
   // Auto-fill analyst identity key if persisted
   useEffect(() => {
     getOrCreateIdentity().then((identity) => {
-      setLoginEmail(identity.publicKey);
+      setLoginPublicKey(identity.publicKey);
       setLoginPassword(identity.privateKey);
     });
   }, []);
 
   const handleLoginSubmit = async () => {
-    if (!loginEmail || !loginPassword) return;
+    if (!loginPublicKey || !loginPassword) return;
     setIsProcessing(true);
     setAuthError(null);
     try {
-      localStorage.setItem('pc_public_key', loginEmail);
+      localStorage.setItem('pc_public_key', loginPublicKey);
       localStorage.setItem('pc_private_key', loginPassword);
-      localStorage.setItem('pc_onboarding_email', loginEmail);
-      const res = await syncIdentityToServer({ publicKey: loginEmail, privateKey: loginPassword });
+      const res = await syncIdentityToServer({ publicKey: loginPublicKey, privateKey: loginPassword });
       if (res.success) {
         window.dispatchEvent(new Event('storage'));
         setIsProcessing(false);
@@ -73,8 +72,8 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }
                         <span className="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-[16px] text-gray-500 group-focus-within:text-neon-cyan transition-colors">fingerprint</span>
                         <input 
                         type="text" 
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        value={loginPublicKey}
+                        onChange={(e) => setLoginPublicKey(e.target.value)}
                         placeholder="0x..."
                         className="w-full bg-[#1a052b] border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder-gray-600 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all font-mono text-xs"
                         autoFocus
@@ -103,7 +102,7 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({ onSuccess, onClose }
 
                 <button 
                     onClick={handleLoginSubmit}
-                    disabled={!loginEmail || !loginPassword || isProcessing}
+                    disabled={!loginPublicKey || !loginPassword || isProcessing}
                     className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2 mt-4"
                 >
                     {isProcessing ? "Authenticating..." : "Decrypt & Enter"} 

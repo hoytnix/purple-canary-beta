@@ -128,36 +128,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     };
   }, [publicKey, privateKey]);
 
-  // Query tier directly from the users row in the database
-  useEffect(() => {
-    let active = true;
-    if (!publicKey) return;
-
-    getUserProfile(publicKey)
-      .then((profile) => {
-        if (active && profile?.tier) {
-          setDbTier(profile.tier);
-        }
-      })
-      .catch((err) => console.error('Failed to load user tier from db:', err));
-
-    return () => {
-      active = false;
-    };
-  }, [publicKey, step]);
-
-  // Step 1: Persistence for Identity Key & Country
+  // Step 1: Persistence for Identity Key & Country (local state only, no DB insert)
   useEffect(() => {
     getOrCreateIdentity().then((identity) => {
       setPublicKey(identity.publicKey);
       setPrivateKey(identity.privateKey);
-      syncIdentityToServer(identity)
-        .then((res) => {
-          if (res.user?.tier) {
-            setDbTier(res.user.tier);
-          }
-        })
-        .catch((err) => console.error('Sync identity error:', err));
     });
     const savedCountry = localStorage.getItem('pc_onboarding_country') || 'US';
     setCountry(savedCountry);
@@ -187,10 +162,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     setPublicKey(newIdentity.publicKey);
     setPrivateKey(newIdentity.privateKey);
     setDbTier('free');
-    const res = await syncIdentityToServer(newIdentity).catch(console.error);
-    if (res && 'user' in res && res.user?.tier) {
-      setDbTier(res.user.tier);
-    }
+    setIsServerAuthenticated(false);
     localStorage.removeItem('pc_shipping_name');
     localStorage.removeItem('pc_shipping_address');
     localStorage.removeItem('pc_shipping_city');
@@ -243,6 +215,12 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
       // If public key exists, private key matches, tier in DB is Pro License, and kit is unchecked:
       if (publicKey.trim().length > 0 && isPro && !addHardwareKit) {
+        if (!authResult.exists) {
+          await syncIdentityToServer(
+            { publicKey, privateKey },
+            { registerIfMissing: true, tier: currentTier }
+          ).catch(console.error);
+        }
         setIsProcessing(false);
         if (typeof window !== 'undefined') {
           if (window.location.pathname === '/scan') {
@@ -260,20 +238,22 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
       const total = calculateTotal();
       if (total === 0) {
-        // Free version, no kit: complete immediately
-        const userProfile: UserProfile = {
-          publicKey,
-          username: authResult.user.username || 'Shaggy',
-          tier: 'free',
-          access: 'Alpha'
-        };
-        
-        await saveUserProfile(userProfile).catch(console.error);
+        // Free version, no kit: Proceed to Scan (last step)
+        // INSERT ROW ONLY IF IT DOESN'T EXIST!
+        await syncIdentityToServer(
+          { publicKey, privateKey },
+          {
+            registerIfMissing: true,
+            username: authResult.user.username || 'Shaggy',
+            tier: 'free',
+            access: 'Alpha',
+          }
+        ).catch(console.error);
 
         setTimeout(() => {
           setIsProcessing(false);
           onComplete();
-        }, 1200);
+        }, 800);
       } else {
         setIsProcessing(false);
         setStep(3);
@@ -291,19 +271,6 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     setStripeError(null);
     try {
       localStorage.setItem('pc_user_tier', selectedPlan);
-      
-      const userProfile: UserProfile = {
-        publicKey,
-        username: 'Shaggy',
-        tier: selectedPlan,
-        access: 'Alpha',
-        shippingName: addHardwareKit ? shippingName : '',
-        shippingAddress: addHardwareKit ? shippingAddress : '',
-        shippingCity: addHardwareKit ? shippingCity : '',
-        shippingZip: addHardwareKit ? shippingZip : ''
-      };
-      
-      await saveUserProfile(userProfile);
 
       const total = calculateTotal();
       const res = await fetch('/api/checkout/create-session', {
@@ -316,6 +283,13 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
           productName: addHardwareKit
             ? `Purple Canary Pro License + Hardware Kit ($${total.toFixed(2)})`
             : `Purple Canary Pro License ($${total.toFixed(2)})`,
+          metadata: {
+            username: 'Shaggy',
+            shippingName: addHardwareKit ? shippingName : '',
+            shippingAddress: addHardwareKit ? shippingAddress : '',
+            shippingCity: addHardwareKit ? shippingCity : '',
+            shippingZip: addHardwareKit ? shippingZip : '',
+          },
         }),
       });
 

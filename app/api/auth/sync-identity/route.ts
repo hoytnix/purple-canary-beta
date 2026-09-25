@@ -43,7 +43,20 @@ export function verifySignature(publicKeyB64: string, message: string, signature
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { publicKey, privateKey, signature, timestamp } = body;
+    const {
+      publicKey,
+      privateKey,
+      signature,
+      timestamp,
+      registerIfMissing,
+      username,
+      tier,
+      access,
+      shippingName,
+      shippingAddress,
+      shippingCity,
+      shippingZip,
+    } = body;
 
     if (!publicKey || !signature || !timestamp) {
       return NextResponse.json(
@@ -92,40 +105,76 @@ export async function POST(req: NextRequest) {
           privateKeyHash: saltedHash,
         });
       }
-    } else {
-      // New user registration: store salted private key hash in users table
-      const saltedHash = privateKey ? hashPrivateKey(privateKey) : null;
+
+      // Update last_login only when user already exists
       await dbService.upsertUser({
         publicKey,
-        privateKeyHash: saltedHash || undefined,
-        tier: 'free',
-        access: 'Alpha',
+        lastLogin: new Date().toISOString(),
+      });
+
+      const user = await dbService.getUser(publicKey);
+      return NextResponse.json({
+        success: true,
+        exists: true,
+        user: {
+          id: user?.publicKey || existingUser.publicKey,
+          publicKey: user?.publicKey || existingUser.publicKey,
+          username: user?.username || existingUser.username,
+          tier: user?.tier || existingUser.tier,
+          access: user?.access || existingUser.access,
+          shippingName: user?.shippingName || existingUser.shippingName,
+          shippingAddress: user?.shippingAddress || existingUser.shippingAddress,
+          shippingCity: user?.shippingCity || existingUser.shippingCity,
+          shippingZip: user?.shippingZip || existingUser.shippingZip,
+        },
       });
     }
 
-    // Update last_login
+    // 3. User DOES NOT exist in DB
+    if (!registerIfMissing) {
+      // DO NOT insert a row! Return virtual unpersisted state
+      return NextResponse.json({
+        success: true,
+        exists: false,
+        user: {
+          id: publicKey,
+          publicKey,
+          username: username || 'Shaggy',
+          tier: 'free',
+          access: 'Alpha',
+        },
+      });
+    }
+
+    // 4. Final step (Proceed to Scan / registration): ONLY insert if it doesn't exist
+    const saltedHash = privateKey ? hashPrivateKey(privateKey) : null;
     await dbService.upsertUser({
       publicKey,
+      privateKeyHash: saltedHash || undefined,
+      username: username || 'Shaggy',
+      tier: tier || 'free',
+      access: access || 'Alpha',
+      shippingName: shippingName || null,
+      shippingAddress: shippingAddress || null,
+      shippingCity: shippingCity || null,
+      shippingZip: shippingZip || null,
       lastLogin: new Date().toISOString(),
     });
 
-    const user = await dbService.getUser(publicKey);
-    if (!user) {
-      return NextResponse.json({ error: 'User could not be retrieved.' }, { status: 500 });
-    }
-
+    const newUser = await dbService.getUser(publicKey);
     return NextResponse.json({
       success: true,
+      exists: true,
       user: {
-        id: user.publicKey,
-        publicKey: user.publicKey,
-        username: user.username,
-        tier: user.tier,
-        access: user.access,
-        shippingName: user.shippingName,
-        shippingAddress: user.shippingAddress,
-        shippingCity: user.shippingCity,
-        shippingZip: user.shippingZip,
+        id: newUser?.publicKey || publicKey,
+        publicKey: newUser?.publicKey || publicKey,
+        username: newUser?.username || username || 'Shaggy',
+        tier: newUser?.tier || tier || 'free',
+        access: newUser?.access || access || 'Alpha',
+        shippingName: newUser?.shippingName,
+        shippingAddress: newUser?.shippingAddress,
+        shippingCity: newUser?.shippingCity,
+        shippingZip: newUser?.shippingZip,
       },
     });
   } catch (error: any) {

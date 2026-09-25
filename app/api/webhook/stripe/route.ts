@@ -45,14 +45,33 @@ export async function POST(req: NextRequest) {
         status: session.payment_status,
       });
 
-      // Grant credits or activate membership
-      const user = await dbService.getUser(userId);
-      await dbService.upsertUser({
-        id: userId,
-        subscriptionStatus: 'active',
-        tier: 'unlimited',
-        credits: (user?.credits || 0) + 10,
-      });
+      // ONLY IF IT DOESN'T EXIST: insert user, otherwise update tier
+      const existingUser = await dbService.getUser(userId);
+      const meta = (session.metadata || {}) as Record<string, string>;
+
+      if (!existingUser) {
+        await dbService.upsertUser({
+          publicKey: userId,
+          username: meta.username || 'Shaggy',
+          tier: 'unlimited',
+          access: 'Alpha',
+          shippingName: meta.shippingName || null,
+          shippingAddress: meta.shippingAddress || null,
+          shippingCity: meta.shippingCity || null,
+          shippingZip: meta.shippingZip || null,
+          lastLogin: new Date().toISOString(),
+        });
+      } else {
+        await dbService.upsertUser({
+          publicKey: userId,
+          tier: 'unlimited',
+          ...(meta.shippingName && { shippingName: meta.shippingName }),
+          ...(meta.shippingAddress && { shippingAddress: meta.shippingAddress }),
+          ...(meta.shippingCity && { shippingCity: meta.shippingCity }),
+          ...(meta.shippingZip && { shippingZip: meta.shippingZip }),
+          lastLogin: new Date().toISOString(),
+        });
+      }
     }
   }
 

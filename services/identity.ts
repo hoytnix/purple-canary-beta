@@ -158,11 +158,22 @@ export async function signPayload(message: string, privateKeyB64: string): Promi
 }
 
 /**
- * Cryptographically authenticates and upserts identity to the backend server.
+ * Cryptographically authenticates identity with the backend server.
+ * Does NOT insert into users table unless registerIfMissing is explicitly true.
  */
 export async function syncIdentityToServer(
-  identityParam?: KeyPairStrings
-): Promise<{ success: boolean; user?: any; error?: string }> {
+  identityParam?: KeyPairStrings,
+  options?: {
+    registerIfMissing?: boolean;
+    username?: string;
+    tier?: string;
+    access?: string;
+    shippingName?: string;
+    shippingAddress?: string;
+    shippingCity?: string;
+    shippingZip?: string;
+  }
+): Promise<{ success: boolean; exists?: boolean; user?: any; error?: string }> {
   try {
     const identity = identityParam || (await getOrCreateIdentity());
     if (!identity.publicKey || !identity.privateKey) {
@@ -180,6 +191,14 @@ export async function syncIdentityToServer(
         privateKey: identity.privateKey,
         signature,
         timestamp,
+        registerIfMissing: options?.registerIfMissing ?? false,
+        username: options?.username,
+        tier: options?.tier,
+        access: options?.access,
+        shippingName: options?.shippingName,
+        shippingAddress: options?.shippingAddress,
+        shippingCity: options?.shippingCity,
+        shippingZip: options?.shippingZip,
       }),
     });
 
@@ -188,7 +207,7 @@ export async function syncIdentityToServer(
       return { success: false, error: data.error || `HTTP ${res.status}` };
     }
 
-    return { success: true, user: data.user };
+    return { success: true, exists: data.exists, user: data.user };
   } catch (err: any) {
     console.error('Failed to sync identity to server:', err);
     return { success: false, error: err.message };

@@ -35,6 +35,14 @@
 - [x] Added `private_key_hash` column to Drizzle ORM `users` schema and pushed to TursoDB via `drizzle-kit push`.
 - [x] Implemented salted PBKDF2 SHA-512 private key hashing (`services/authSecurity.ts`) and verified private key authenticity during `/api/auth/sync-identity` requests to prevent public key impersonation attacks.
 
+### 6. Database Hit Minimization & User Ingestion Control
+- [x] Removed continuous interval polling (`setInterval`) from `subscribeAllLatestScanRecords` and `subscribeScanRecords`; stats carousel and scans fetch strictly once per page load.
+- [x] Separated scan ingestion from user creation: `recordScan` and `seedScansIfEmpty` no longer inject dummy rows into the `users` table; legacy seed users purged from database.
+- [x] Defer user insertion in `sync-identity` until explicitly requested via `registerIfMissing: true` at the final "Proceed to Scan" step or upon verified Stripe checkout completion.
+- [x] Ensured user rows are inserted only if they do not already exist (`AND ONLY IF IT DOESN'T EXIST`), updating tier and shipping metadata when returning users complete transactions.
+- [x] Streamlined `CheckoutWizard.tsx` and `App.tsx` by eliminating redundant mount synchronization and step-triggered DB queries.
+
+
 
 ---
 

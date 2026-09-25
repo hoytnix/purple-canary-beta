@@ -28,5 +28,10 @@
 9. **License Page Pro License Bypass to `/scan`**: On Page 2 of `CheckoutWizard.tsx` ("Choose your License."), when the public key exists, the private key mathematically matches the public key via ECDSA P-256 validation (`validateKeyPair`), the user's tier directly in the database `users` row is Pro License (`unlimited` or `pro`), and the hardware kit is unchecked, the submit button dynamically shifts from "Proceed to Checkout" to "Proceed to Scan" and navigates directly to the `/scan` route without requiring re-payment or checkout wizard loops.
 10. **Salted Private Key Hash Authentication (Anti-Impersonation)**: In the `users` table, added `private_key_hash TEXT` managed via Drizzle push (`drizzle-kit push`). Client identity authentication at `/api/auth/sync-identity` computes and verifies a salted PBKDF2 SHA-512 hash (`salt:hash`) against the database row with `crypto.timingSafeEqual`, preventing anyone from impersonating another user's public key.
 11. **Mandatory Memory Bank Sync & Git Commits**: Committing all atomic changes directly via shell tool per operational directives.
+12. **Database Hit Reduction & Deferred User Insertion Law**:
+    - The live network activity carousel and scan subscribers fetch only once on page mount without continuous periodic polling (`setInterval` removed).
+    - Client key generation and routine identity cryptographic verification (`/api/auth/sync-identity`) operate read-only without inserting rows into `users` table.
+    - User rows in TursoDB `users` table are created ONLY at the final step ("Proceed to Scan" or a completed Stripe checkout session) AND ONLY IF the user does not already exist in the database.
+    - Scan recording and mock scan seeding write strictly to the `scans` table and never insert dummy records into the `users` table.
 
 
