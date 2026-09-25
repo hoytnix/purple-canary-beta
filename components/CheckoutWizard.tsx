@@ -31,16 +31,14 @@ const isProLicenseStatus = (status?: string | null): boolean => {
 const PLANS = [
   { 
     id: 'free', 
-    price: 0.00, 
     label: "Free Ad Version", 
     desc: "Supported by monetag.com",
     features: ["Full forensic scanner access", "Ad-supported experience", "Chemical tests cost 0.167¢/run"]
   },
   { 
     id: 'unlimited', 
-    price: 1.00, 
     label: "Unlimited Pro License", 
-    desc: "One-time payment // No ads", 
+    desc: "Donate any amount // No ads", 
     features: ["100% Ad-Free interface", "Priority cloud-matrix queue", "Chemical tests cost 0.167¢/run"]
   },
 ];
@@ -61,6 +59,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [country, setCountry] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'unlimited'>('unlimited');
+  const [donationAmount, setDonationAmount] = useState<number>(5.00);
+  const [customDonationInput, setCustomDonationInput] = useState<string>('5.00');
   const [addHardwareKit, setAddHardwareKit] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
@@ -179,8 +179,17 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     window.dispatchEvent(new Event('storage'));
   };
 
+  const getPlanPrice = (): number => {
+    if (selectedPlan === 'free') return 0;
+    const parsed = parseFloat(customDonationInput);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+    return donationAmount > 0 ? donationAmount : 1.00;
+  };
+
   const calculateTotal = () => {
-    const planPrice = selectedPlan === 'unlimited' ? 1.00 : 0.00;
+    const planPrice = getPlanPrice();
     const kitPrice = addHardwareKit ? 25.00 : 0.00;
     return planPrice + kitPrice;
   };
@@ -286,6 +295,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         localStorage.setItem('pc_private_key', activePrivKey);
       }
 
+      const planPrice = getPlanPrice();
       const total = calculateTotal();
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
@@ -296,10 +306,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
           priceId: 'price_XXXXX', // Stripe Price ID
           amount: total,
           productName: addHardwareKit
-            ? `Purple Canary Pro License + Hardware Kit ($${total.toFixed(2)})`
-            : `Purple Canary Pro License ($${total.toFixed(2)})`,
+            ? `Purple Canary Pro License (Donation $${planPrice.toFixed(2)}) + Hardware Kit ($25.00)`
+            : `Purple Canary Pro License (Donation $${planPrice.toFixed(2)})`,
           metadata: {
             username: 'Shaggy',
+            donationAmount: planPrice.toFixed(2),
             shippingName: addHardwareKit ? shippingName : '',
             shippingAddress: addHardwareKit ? shippingAddress : '',
             shippingCity: addHardwareKit ? shippingCity : '',
@@ -476,7 +487,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                         >
                             {plan.id === 'unlimited' && (
                                 <div className="absolute -top-2.5 -right-2 bg-gradient-to-r from-neon-cyan to-blue-500 text-[#1a052b] text-[8px] font-black tracking-wider uppercase px-2.5 py-1 rounded-full shadow-lg border border-[#1a052b]/50 animate-pulse">
-                                    ONE-TIME ONLY
+                                    DONATION TIER
                                 </div>
                             )}
                             <div className="flex-1 pr-4">
@@ -491,13 +502,89 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                                     ))}
                                 </div>
                             </div>
-                            <div className="text-xl font-black text-neon-cyan shrink-0">
-                                {plan.price === 0 ? "FREE" : `$${plan.price.toFixed(2)}`}
+                            <div className="shrink-0 text-right">
+                                {plan.id === 'free' ? (
+                                    <span className="text-xl font-black text-neon-cyan">FREE</span>
+                                ) : isSelected ? (
+                                    <div>
+                                        <div className="text-xl font-black text-neon-cyan">${getPlanPrice().toFixed(2)}</div>
+                                        <div className="text-[8px] font-mono text-neon-cyan/70 uppercase">Donation</div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div className="text-sm font-black text-neon-cyan uppercase">Donate</div>
+                                        <div className="text-[8px] font-mono text-gray-400 uppercase">Any Amount</div>
+                                    </div>
+                                )}
                             </div>
                         </button>
                     );
                 })}
                 </div>
+
+                {/* Donation Amount Selector for Unlimited Pro */}
+                {selectedPlan === 'unlimited' && (
+                  <div className="bg-[#1a052b]/60 border border-neon-cyan/30 rounded-xl p-3.5 space-y-2.5 animate-in fade-in">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neon-cyan flex items-center gap-1.5">
+                        <span className="material-symbols-rounded text-sm">volunteer_activism</span>
+                        Donation Amount
+                      </span>
+                      <span className="text-[9px] font-mono text-gray-400">Pay what you want (Min $0.50)</span>
+                    </div>
+
+                    {/* Quick Presets */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 5, 10, 25].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setDonationAmount(preset);
+                            setCustomDonationInput(preset.toString());
+                          }}
+                          className={`py-2 px-1 text-xs font-mono font-bold rounded-lg border transition-all ${
+                            getPlanPrice() === preset && customDonationInput === preset.toString()
+                              ? 'bg-neon-cyan text-[#1a052b] border-neon-cyan shadow-[0_0_10px_rgba(0,255,255,0.3)]'
+                              : 'bg-white/5 border-white/10 text-gray-300 hover:border-white/20 hover:text-white'
+                          }`}
+                        >
+                          ${preset}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom Donation Input */}
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-mono font-bold text-gray-400">$</span>
+                      <input
+                        type="number"
+                        min="0.50"
+                        step="any"
+                        placeholder="Enter custom donation amount"
+                        value={customDonationInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomDonationInput(val);
+                          const parsed = parseFloat(val);
+                          if (!isNaN(parsed) && parsed > 0) {
+                            setDonationAmount(parsed);
+                          }
+                        }}
+                        className="w-full bg-[#10031c] border border-white/10 rounded-lg py-2.5 pl-8 pr-14 text-sm font-mono text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan focus:ring-1 focus:ring-neon-cyan transition-all"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-500 uppercase">USD</span>
+                    </div>
+                    {getPlanPrice() < 0.50 && (
+                      <div className="text-[10px] text-red-400 font-mono">
+                        Minimum donation is $0.50 USD to process transaction.
+                      </div>
+                    )}
+                    <p className="text-[9px] font-mono text-gray-400 leading-tight">
+                      Donate any amount to support open-source harm-reduction screening and unlock 100% ad-free unlimited scans.
+                    </p>
+                  </div>
+                )}
 
                 {/* Optional Hardware Kit Option */}
                 <div className="pt-2 space-y-3">
@@ -544,7 +631,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
                 <button 
                 onClick={handleProceedStep2}
-                disabled={isProcessing || Boolean(authError)}
+                disabled={isProcessing || Boolean(authError) || (selectedPlan === 'unlimited' && getPlanPrice() < 0.50)}
                 className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg mt-2 flex items-center justify-center gap-2"
                 >
                 {isProcessing 
@@ -571,8 +658,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
                 <div className="bg-[#1a052b]/50 rounded-xl p-4 border border-white/5 space-y-2">
                 <div className="flex justify-between items-center text-sm font-bold text-white">
-                    <span>{selectedPlan === 'unlimited' ? 'Unlimited Pro License' : 'Free Ad Version'}</span>
-                    <span>{selectedPlan === 'unlimited' ? '$1.00' : '$0.00'}</span>
+                    <span>{selectedPlan === 'unlimited' ? 'Unlimited Pro License (Donation)' : 'Free Ad Version'}</span>
+                    <span>{selectedPlan === 'unlimited' ? `$${getPlanPrice().toFixed(2)}` : '$0.00'}</span>
                 </div>
                 {addHardwareKit && (
                     <div className="flex justify-between items-center text-xs text-green-400">

@@ -54,6 +54,11 @@
     - **Features**: Live KPI stat cards (users, scans, threat interceptions, gross revenue), threat spectrum distribution meter, real-time node registry with interactive tier promotion/mutation (`admin`, `unlimited`, `pro`, `free`), forensic scan ledger with deep JSON spectrum inspector modal, Stripe payment ledger, and auditable JSON backup exporter.
     - **CLI Operator Tool**: Created `scripts/setAdminTier.ts` (`pnpm tsx scripts/setAdminTier.ts set <pubkey> admin`) for direct TursoDB user tier management.
     - **Package Manager Standard**: Mandated `pnpm` across all builds, scripts, and workflows.
+17. **Unlimited Pro Tier "Donate Any Amount" Model**:
+    - Transitioned the Unlimited Pro License from a static $1.00 charge to an open-ended "Donate Any Amount" harm-reduction funding model.
+    - In `components/CheckoutWizard.tsx`, added dynamic donation amount controls with quick presets ($1, $5, $10, $25) and arbitrary custom USD input (minimum $0.50 enforced for Stripe card processing).
+    - Integrated dynamic donation calculation into Stripe Checkout session creation (`/api/checkout/create-session`) and persisted `donationAmount` in Stripe metadata.
+    - Updated user-facing labels in `CheckoutWizard.tsx` and `MyAccount.tsx` to reflect the donation model.
 
 
 

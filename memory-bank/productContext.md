@@ -32,5 +32,5 @@ Physical color charts are difficult to interpret accurately under variable ambie
 
 ## Account, Credit & Monetization Model
 - **Free Ad-Supported Tier**: Access to core forensic scanning, supported by sponsor banners, with a small scan credit quota.
-- **Unlimited Pro Tier ($1.00 one-time / subscription)**: 100% ad-free interface, priority cloud-matrix queue, unlimited scans, and advanced report export options.
+- **Unlimited Pro Tier (Donate any amount / pay-what-you-want one-time donation)**: 100% ad-free interface, priority cloud-matrix queue, unlimited scans, and advanced report export options.
 - Managed via automated **Stripe Checkout Sessions** and idempotent webhook processing, deprecating all manual payment handles.

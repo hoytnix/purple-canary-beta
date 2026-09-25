@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
                 product_data: {
                   name: productName || 'Purple Canary Unlimited Pro License',
                 },
-                unit_amount: amount ? Math.round(Number(amount) * 100) : 100,
+                unit_amount: amount ? Math.max(50, Math.round(Number(amount) * 100)) : 100,
               },
               quantity: 1,
             },

@@ -175,7 +175,7 @@ export const MyAccount: React.FC<MyAccountProps> = ({ onClose }) => {
                                       onClick={() => setShowUpgrade(true)}
                                       className="text-[8px] font-black uppercase text-white hover:text-neon-cyan tracking-wider bg-ultra-violet/30 hover:bg-ultra-violet/60 border border-ultra-violet/40 px-2 py-1 rounded transition-all cursor-pointer w-fit"
                                   >
-                                      Upgrade to Unlimited ($1)
+                                      Upgrade to Unlimited (Donate)
                                   </button>
                               </div>
                           )}

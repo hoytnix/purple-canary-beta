@@ -61,6 +61,13 @@
 - [x] Built developer CLI tool `scripts/setAdminTier.ts` for listing, inspecting, and promoting node tiers in TursoDB.
 - [x] Standardized package manager on `pnpm` across builds and scripts.
 
+### 8. Donation-Driven Unlimited Pro License
+- [x] Converted the static $1.00 Unlimited Pro tier into a flexible "Donate Any Amount" harm-reduction funding model.
+- [x] Implemented quick donation presets ($1, $5, $10, $25) alongside arbitrary USD amount entry in `CheckoutWizard.tsx`.
+- [x] Enforced $0.50 minimum transaction guard for Stripe card processing compatibility.
+- [x] Passed custom donation amount into Stripe Checkout Session and recorded donation metadata.
+- [x] Updated UI copy in `MyAccount.tsx` and `CheckoutWizard.tsx`.
+
 ---
 
 ## Active & In-Progress Work
