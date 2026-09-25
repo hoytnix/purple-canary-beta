@@ -53,15 +53,18 @@
     - **Cryptographic Server-Side Authentication**: All administrative API endpoints under `app/api/admin/` (`auth-check`, `stats`, `users`, `scans`, `transactions`) are guarded by `authenticateAdminRequest` in `services/adminAuth.ts`. Requesters must sign an `admin-auth:${publicKey}:${timestamp}` challenge via ECDSA P-256 (within a 5-minute replay window), and their TursoDB record is verified to have `tier === 'admin'`.
     - **Features**: Live KPI stat cards (users, scans, threat interceptions, gross revenue), threat spectrum distribution meter, real-time node registry with interactive tier promotion/mutation (`admin`, `unlimited`, `pro`, `free`), forensic scan ledger with deep JSON spectrum inspector modal, Stripe payment ledger, and auditable JSON backup exporter.
     - **CLI Operator Tool**: Created `scripts/setAdminTier.ts` (`pnpm tsx scripts/setAdminTier.ts set <pubkey> admin`) for direct TursoDB user tier management.
-    - **Package Manager Standard**: Mandated `pnpm` across all builds, scripts, and workflows.
 17. **Unlimited Pro Tier "Donate Any Amount" Model**:
     - Transitioned the Unlimited Pro License from a static $1.00 charge to an open-ended "Donate Any Amount" harm-reduction funding model.
     - In `components/CheckoutWizard.tsx`, added dynamic donation amount controls with quick presets ($1, $5, $10, $25) and arbitrary custom USD input (minimum $0.50 enforced for Stripe card processing).
     - Integrated dynamic donation calculation into Stripe Checkout session creation (`/api/checkout/create-session`) and persisted `donationAmount` in Stripe metadata.
-    - Updated user-facing labels in `CheckoutWizard.tsx` and `MyAccount.tsx` to reflect the donation model.
 18. **Hardware Kit Image Repositioning**:
     - Removed the forensic hardware kit product image from inside `CheckoutWizard.tsx` (Step 2) to streamline the checkout wizard flow.
     - Positioned the kit image directly into the Hero left column in `LandingPage.tsx` directly beneath the "Verified Accuracy & Instant Results" trust badges, maintaining full responsive constraints down to 375px.
-
-
-
+19. **5-Step Checkout Wizard & Dedicated Kit Selection Flow**:
+    - Refactored `components/CheckoutWizard.tsx` into a 5-step pipeline:
+      - **Step 1**: Identity Keypair & Operating Region ("Unlock the Oracle.")
+      - **Step 2**: Dedicated Forensic Hardware Kit upsell page with interactive quantity counter (`kitQuantity`), unit price ($25.00), total line item calculation, and Back/Continue navigation.
+      - **Step 3**: License & Harm-Reduction Contribution ("Choose your License.") with Free tier, Unlimited Pro with donation presets ($1, $5, $10, $25) or custom amount, and conditional "Skip Donation ($0.00)" button for unlimited/pro tier users (`isUnlimitedUser`), setting donation amount to 0 and advancing immediately.
+      - **Step 4**: Order Summary & Kit Shipping Address entry with itemized quantity breakdown (`x${kitQuantity}`).
+      - **Step 5**: Stripe Secure 256-bit encrypted checkout execution passing `kitQuantity` and `donationAmount` in Stripe metadata.
+    - Updated wizard progress bar formula to `(step / 5) * 100%`.

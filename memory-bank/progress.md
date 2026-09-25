@@ -71,6 +71,15 @@
 ### 9. Hero Layout & Checkout Streamlining
 - [x] Moved the forensic hardware kit product image out of `CheckoutWizard.tsx` (Step 2) into the hero left column in `LandingPage.tsx` directly beneath "Verified Accuracy & Instant Results".
 
+### 10. 5-Step Checkout Wizard with Dedicated Kit Selection & Skip Donation
+- [x] Refactored `CheckoutWizard.tsx` from 4 to 5 total steps with `(step / 5) * 100%` progress bar.
+- [x] Inserted standalone hardware kit upsell as Step 2 with interactive counter (`kitQuantity`), unit price, and Back/Continue navigation.
+- [x] Moved License and Donation controls to Step 3, retaining presets and custom input.
+- [x] Added conditional "Skip Donation ($0.00)" button for unlimited/pro tier users (`isUnlimitedUser`), setting donation amount to 0 and advancing immediately.
+- [x] Shifted Order Summary & Shipping Address to Step 4 with kit quantity multiplier badge.
+- [x] Shifted Stripe 256-bit Secure Checkout to Step 5.
+
+
 ---
 
 ## Active & In-Progress Work

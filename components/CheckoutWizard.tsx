@@ -62,6 +62,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
   const [donationAmount, setDonationAmount] = useState<number>(5.00);
   const [customDonationInput, setCustomDonationInput] = useState<string>('5.00');
   const [addHardwareKit, setAddHardwareKit] = useState(true);
+  const [kitQuantity, setKitQuantity] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
 
@@ -190,12 +191,14 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
   const calculateTotal = () => {
     const planPrice = getPlanPrice();
-    const kitPrice = addHardwareKit ? 25.00 : 0.00;
+    const kitPrice = addHardwareKit ? 25.00 * kitQuantity : 0.00;
     return planPrice + kitPrice;
   };
 
-  // Check tier from db users row
-  const isPaymentStatusPro = isProLicenseStatus(paymentStatusProp || dbTier);
+  // Check tier from db users row or props
+  const effectiveTier = paymentStatusProp || dbTier;
+  const isPaymentStatusPro = isProLicenseStatus(effectiveTier);
+  const isUnlimitedUser = effectiveTier.toLowerCase().trim() === 'unlimited' || selectedPlan === 'unlimited' || isPaymentStatusPro;
 
   const canBypassToScan = Boolean(
     publicKey &&
@@ -206,10 +209,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
     !addHardwareKit
   );
 
-  const handleProceedStep2 = async () => {
+  const handleProceedFromDonation = async (bypassAmount?: number) => {
     setIsProcessing(true);
     setStripeError(null);
     try {
+      const activeDonation = typeof bypassAmount === 'number' ? bypassAmount : getPlanPrice();
       // 1. Verify keypair matches mathematically
       const keyMatch = isKeypairValid || (await validateKeyPair(publicKey, privateKey));
       if (!keyMatch) {
@@ -232,7 +236,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
       const isPro = isProLicenseStatus(paymentStatusProp || currentTier);
 
       // If public key exists, private key matches, tier in DB is Pro License, and kit is unchecked:
-      if (publicKey.trim().length > 0 && isPro && !addHardwareKit) {
+      if (publicKey.trim().length > 0 && isPro && !addHardwareKit && activeDonation === 0) {
         if (!authResult.exists) {
           await syncIdentityToServer(
             { publicKey, privateKey },
@@ -254,16 +258,15 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         return;
       }
 
-      const total = calculateTotal();
+      const total = activeDonation + (addHardwareKit ? 25.00 * kitQuantity : 0.00);
       if (total === 0) {
-        // Free version, no kit: Proceed to Scan (last step)
-        // INSERT ROW ONLY IF IT DOESN'T EXIST!
+        // Free version / skipped donation, no kit: Proceed to Scan (last step)
         await syncIdentityToServer(
           { publicKey, privateKey },
           {
             registerIfMissing: true,
             username: authResult.user.username || 'Shaggy',
-            tier: 'free',
+            tier: currentTier || 'free',
             access: 'Alpha',
           }
         ).catch(console.error);
@@ -274,15 +277,20 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
         }, 800);
       } else {
         setIsProcessing(false);
-        setStep(3);
+        setStep(4);
       }
     } catch (err: any) {
-      console.error('Error proceeding step 2:', err);
+      console.error('Error proceeding from donation:', err);
       setStripeError(err?.message || 'Authentication error.');
       setIsProcessing(false);
     }
   };
 
+  const handleSkipDonation = () => {
+    setDonationAmount(0);
+    setCustomDonationInput('0.00');
+    handleProceedFromDonation(0);
+  };
 
   const handleStripeCheckout = async () => {
     setIsProcessing(true);
@@ -297,6 +305,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
 
       const planPrice = getPlanPrice();
       const total = calculateTotal();
+      const kitTotal = addHardwareKit ? 25.00 * kitQuantity : 0.00;
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -306,11 +315,12 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
           priceId: 'price_XXXXX', // Stripe Price ID
           amount: total,
           productName: addHardwareKit
-            ? `Purple Canary Pro License (Donation $${planPrice.toFixed(2)}) + Hardware Kit ($25.00)`
+            ? `Purple Canary Pro License (Donation $${planPrice.toFixed(2)}) + Hardware Kit x${kitQuantity} ($${kitTotal.toFixed(2)})`
             : `Purple Canary Pro License (Donation $${planPrice.toFixed(2)})`,
           metadata: {
             username: 'Shaggy',
             donationAmount: planPrice.toFixed(2),
+            kitQuantity: addHardwareKit ? kitQuantity.toString() : '0',
             shippingName: addHardwareKit ? shippingName : '',
             shippingAddress: addHardwareKit ? shippingAddress : '',
             shippingCity: addHardwareKit ? shippingCity : '',
@@ -338,11 +348,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
   return (
     <div className={`bg-[#1a052b]/80 border border-white/10 rounded-3xl p-6 backdrop-blur-xl shadow-2xl relative overflow-hidden transition-all duration-500 group hover:border-neon-cyan/20 ${className}`}>
         
-        {/* Progress Bar */}
+        {/* Progress Bar (Total 5 Steps) */}
         <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
             <div 
             className="h-full bg-gradient-to-r from-neon-cyan to-ultra-violet transition-all duration-500"
-            style={{ width: `${(step / 4) * 100}%` }}
+            style={{ width: `${(step / 5) * 100}%` }}
             ></div>
         </div>
 
@@ -463,8 +473,93 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
             </div>
         )}
 
-        {/* --- STEP 2 (LICENSES) --- */}
+        {/* --- STEP 2 (NEW - HARDWARE KIT SELECTION) --- */}
         {step === 2 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-8 pt-4">
+                <div className="text-center pt-2">
+                    <h2 className="text-lg font-bold text-white">Forensic Hardware Kit.</h2>
+                    <p className="text-xs text-gray-400">Add physical testing gear or continue with software only.</p>
+                </div>
+
+                <div className="space-y-3">
+                    <button 
+                        type="button"
+                        onClick={() => setAddHardwareKit(!addHardwareKit)}
+                        className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3
+                            ${addHardwareKit 
+                            ? 'border-ultra-violet bg-ultra-violet/10 shadow-[0_0_15px_rgba(139,92,246,0.2)]' 
+                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                            }
+                        `}
+                    >
+                        <div className="shrink-0 flex items-center">
+                            <span className={`material-symbols-rounded text-[22px] ${addHardwareKit ? 'text-ultra-violet' : 'text-gray-500'}`}>
+                                {addHardwareKit ? 'check_box' : 'check_box_outline_blank'}
+                            </span>
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs font-black text-white uppercase">Reusable Forensic Hardware Kit</span>
+                                <span className="text-xs font-black text-neon-cyan shrink-0">$25.00</span>
+                            </div>
+                            <p className="text-[9px] font-mono text-gray-400 mt-1 leading-relaxed">
+                                Includes 100x chromatography strips, 100ml solvent, and dual-core UV light. Performing tests on the hardware costs <strong className="text-white">0.167¢</strong> per run!
+                            </p>
+                        </div>
+                    </button>
+
+                    {/* Quantity Selector if kit is selected */}
+                    {addHardwareKit && (
+                        <div className="bg-[#1a052b]/60 border border-ultra-violet/30 rounded-xl p-3.5 flex items-center justify-between animate-in fade-in">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+                                <span className="material-symbols-rounded text-sm text-neon-cyan">pin</span>
+                                Kit Quantity
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setKitQuantity(Math.max(1, kitQuantity - 1))}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white hover:border-neon-cyan transition-colors"
+                                >
+                                    -
+                                </button>
+                                <span className="text-xs font-mono font-bold text-white px-2">{kitQuantity}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setKitQuantity(kitQuantity + 1)}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-white hover:border-neon-cyan transition-colors"
+                                >
+                                    +
+                                </button>
+                                <span className="text-xs font-mono text-neon-cyan font-bold ml-2">
+                                    ${(25.00 * kitQuantity).toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                    <button 
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="w-1/3 py-4 bg-white/5 border border-white/10 text-gray-300 font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-white/10 hover:text-white transition-all flex items-center justify-center gap-1"
+                    >
+                        <span className="material-symbols-rounded text-[16px]">arrow_back</span> Back
+                    </button>
+                    <button 
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="w-2/3 py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg flex items-center justify-center gap-2"
+                    >
+                        Continue <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+        )}
+
+        {/* --- STEP 3 (FORMERLY STEP 2 - CONTRIBUTION & LICENSES) --- */}
+        {step === 3 && (
             <div className="space-y-4 animate-in fade-in slide-in-from-right-8 pt-4">
                 <div className="text-center pt-2">
                 <h2 className="text-lg font-bold text-white">Choose your License.</h2>
@@ -586,34 +681,6 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                   </div>
                 )}
 
-                {/* Optional Hardware Kit Option */}
-                <div className="pt-2 space-y-3">
-                    <button 
-                        onClick={() => setAddHardwareKit(!addHardwareKit)}
-                        className={`w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3
-                            ${addHardwareKit 
-                            ? 'border-ultra-violet bg-ultra-violet/10' 
-                            : 'border-white/10 bg-white/5 hover:border-white/20'
-                            }
-                        `}
-                    >
-                        <div className="shrink-0 flex items-center">
-                            <span className={`material-symbols-rounded text-[20px] ${addHardwareKit ? 'text-ultra-violet' : 'text-gray-500'}`}>
-                                {addHardwareKit ? 'check_box' : 'check_box_outline_blank'}
-                            </span>
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs font-black text-white uppercase">Add Reusable Forensic Hardware Kit</span>
-                                <span className="text-xs font-black text-neon-cyan shrink-0">$25.00</span>
-                            </div>
-                            <p className="text-[9px] font-mono text-gray-400 mt-1 leading-relaxed">
-                                Includes 100x chromatography strips, 100ml solvent, and dual-core UV light. Performing tests on the hardware costs <strong className="text-white">0.167¢</strong> per run!
-                            </p>
-                        </div>
-                    </button>
-                </div>
-
                 {(stripeError || authError) && (
                   <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-[10px] text-red-300 font-mono flex items-start gap-2 animate-in fade-in">
                     <span className="material-symbols-rounded text-red-400 text-sm shrink-0">gpp_bad</span>
@@ -621,25 +688,40 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                   </div>
                 )}
 
-                <button 
-                onClick={handleProceedStep2}
-                disabled={isProcessing || Boolean(authError) || (selectedPlan === 'unlimited' && getPlanPrice() < 0.50)}
-                className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg mt-2 flex items-center justify-center gap-2"
-                >
-                {isProcessing 
-                  ? "Unlocking Suite..." 
-                  : canBypassToScan 
-                    ? "Proceed to Scan" 
-                    : calculateTotal() === 0 
-                      ? "Unlock Suite (Free)" 
-                      : "Proceed to Checkout"}
-                <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
-                </button>
+                <div className="space-y-2 mt-2">
+                  <button 
+                  onClick={() => handleProceedFromDonation()}
+                  disabled={isProcessing || Boolean(authError) || (selectedPlan === 'unlimited' && getPlanPrice() < 0.50)}
+                  className="w-full py-4 bg-white text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:bg-neon-cyan transition-all shadow-lg flex items-center justify-center gap-2"
+                  >
+                  {isProcessing 
+                    ? "Unlocking Suite..." 
+                    : canBypassToScan 
+                      ? "Proceed to Scan" 
+                      : calculateTotal() === 0 
+                        ? "Unlock Suite (Free)" 
+                        : "Proceed to Checkout"}
+                  <span className="material-symbols-rounded text-[16px]">arrow_forward</span>
+                  </button>
+
+                  {/* Skip Donation button - visible conditionally for unlimited users */}
+                  {isUnlimitedUser && (
+                    <button
+                      type="button"
+                      onClick={handleSkipDonation}
+                      disabled={isProcessing}
+                      className="w-full py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white font-mono text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-rounded text-sm">skip_next</span>
+                      Skip Donation ($0.00)
+                    </button>
+                  )}
+                </div>
             </div>
         )}
 
-        {/* --- STEP 3 (CHECKOUT & SHIPPING) --- */}
-        {step === 3 && (
+        {/* --- STEP 4 (CHECKOUT & SHIPPING) --- */}
+        {step === 4 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 pt-4">
                 <div className="text-center pt-2">
                 <h2 className="text-lg font-bold text-white">Order Summary.</h2>
@@ -655,8 +737,11 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                 </div>
                 {addHardwareKit && (
                     <div className="flex justify-between items-center text-xs text-green-400">
-                        <span className="flex items-center gap-1"><span className="material-symbols-rounded text-[12px]">redeem</span> Forensic Hardware Kit</span>
-                        <span>$25.00</span>
+                        <span className="flex items-center gap-1">
+                            <span className="material-symbols-rounded text-[12px]">redeem</span> 
+                            Forensic Hardware Kit {kitQuantity > 1 ? `(x${kitQuantity})` : ''}
+                        </span>
+                        <span>${(25.00 * kitQuantity).toFixed(2)}</span>
                     </div>
                 )}
                 {/* Location Tax Line */}
@@ -733,7 +818,7 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
                 </div>
 
                 <button 
-                onClick={() => isShippingValid && setStep(4)}
+                onClick={() => isShippingValid && setStep(5)}
                 disabled={!isShippingValid}
                 className="w-full py-4 bg-gradient-to-r from-neon-cyan to-blue-500 text-[#1a052b] font-black uppercase tracking-widest rounded-xl hover:shadow-[0_0_20px_rgba(0,255,255,0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
@@ -743,8 +828,8 @@ export const CheckoutWizard: React.FC<CheckoutWizardProps> = ({
             </div>
         )}
 
-        {/* --- STEP 4 (STRIPE CHECKOUT) --- */}
-        {step === 4 && (
+        {/* --- STEP 5 (STRIPE CHECKOUT) --- */}
+        {step === 5 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-8 pt-4">
                 <div className="text-center pt-2">
                 <h2 className="text-lg font-bold text-white">Stripe Secure Checkout</h2>
