@@ -79,6 +79,10 @@
 - [x] Shifted Order Summary & Shipping Address to Step 4 with kit quantity multiplier badge.
 - [x] Shifted Stripe 256-bit Secure Checkout to Step 5.
 
+### 11. Netlify Next.js Runtime Deployment Configuration
+- [x] Installed official `@netlify/plugin-nextjs` in `devDependencies` to support Next.js App Router and dynamic `/api` routes on Netlify serverless functions.
+- [x] Configured root `netlify.toml` with `pnpm build` and `@netlify/plugin-nextjs` plugin declaration.
+
 
 ---
 

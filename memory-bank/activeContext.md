@@ -68,3 +68,7 @@
       - **Step 4**: Order Summary & Kit Shipping Address entry with itemized quantity breakdown (`x${kitQuantity}`).
       - **Step 5**: Stripe Secure 256-bit encrypted checkout execution passing `kitQuantity` and `donationAmount` in Stripe metadata.
     - Updated wizard progress bar formula to `(step / 5) * 100%`.
+20. **Netlify Next.js Runtime Configuration**:
+    - Created `netlify.toml` configuring the Next.js runtime plugin (`@netlify/plugin-nextjs`) and build command (`pnpm build`).
+    - Added `@netlify/plugin-nextjs` to `devDependencies` in `package.json` and updated `pnpm-lock.yaml`.
+
