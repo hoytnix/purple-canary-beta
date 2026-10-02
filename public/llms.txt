@@ -1,0 +1,19 @@
+# Purple Canary
+
+> Forensic thin-layer and paper chromatography analysis suite for harm reduction: identify adulterants, cuts, and poisons in substances with computer-vision chromatography. "Spot → Snap → Know."
+
+## Forensic Suite
+
+- [Purple Canary Analysis Suite](https://purplecanarylab.com/): PURPLE CANARY FORENSIC SUITE vβ — phone app plus custom hardware (calibrated TLC strips, dual-band 365/395nm UV light, D-limonene solvent, reagent, vacuum micro-boiler) using computer-vision chromatography.
+
+## Coverage
+
+- [Purple Canary](https://purplecanarylab.com/): 285+ substances with instant risk ratings (CLEAN / HIGH RISK / LETHAL); live network feed includes MDMA, cocaine, ketamine, LSD, THC, amphetamine, and fentanyl.
+
+## Pricing
+
+- [Purple Canary](https://purplecanarylab.com/): Hardware kit $25.00; approximately 0.167¢ per test.
+
+## Disclaimers
+
+- [Purple Canary](https://purplecanarylab.com/): For educational and harm-reduction purposes only. Presumptive use — not a replacement for GC-MS lab testing.
