@@ -83,6 +83,12 @@
 - [x] Installed official `@netlify/plugin-nextjs` in `devDependencies` to support Next.js App Router and dynamic `/api` routes on Netlify serverless functions.
 - [x] Configured root `netlify.toml` with `pnpm build` and `@netlify/plugin-nextjs` plugin declaration.
 
+### 12. Official Companion E-Book Section ("What Was In That Joint Bro!?")
+- [x] Embedded dedicated interactive feature section (Section 4.5) on the landing page for *"What Was In That Joint Bro!? — An Introduction To The Purple Canary Protocol"*.
+- [x] Added direct links to the live e-reader at `https://book.purplecanarylab.com/` and direct download badges for PDF, EPUB, and Markdown formats.
+- [x] Integrated navigation links in the header navbar, footer, and `MenuModal.tsx`.
+- [x] Verified responsiveness down to 375px viewports and confirmed clean Next.js production build (`pnpm build`).
+
 
 ---
 

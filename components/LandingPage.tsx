@@ -138,6 +138,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
                 <span className="text-[8px] font-mono text-gray-400 tracking-widest">FORENSIC SUITE vβ</span>
             </div>
         </div>
+        <div className="flex items-center gap-2.5">
+          <a
+            href="https://book.purplecanarylab.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-purple-500/30 bg-purple-950/40 hover:bg-purple-900/60 text-xs font-mono text-purple-300 hover:text-white transition shadow-sm group"
+            title="Read 'What Was In That Joint Bro!?' Free E-Reader"
+          >
+            <span className="material-symbols-rounded text-[16px] text-neon-cyan group-hover:scale-110 transition-transform">menu_book</span>
+            <span className="hidden sm:inline font-semibold">Free E-Book</span>
+            <span className="material-symbols-rounded text-[12px] opacity-70">open_in_new</span>
+          </a>
+        </div>
       </header>
 
       {/* --- SECTION 1: HERO --- */}
@@ -331,6 +344,231 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             </div>
 
          </div>
+      </section>
+
+      {/* --- SECTION 4.5: THE OFFICIAL E-BOOK --- */}
+      <section id="ebook" className="relative z-10 py-24 bg-gradient-to-b from-[#1a052b] via-[#120320] to-[#10031c] border-t border-white/10 overflow-hidden">
+        {/* Ambient Glows */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-ultra-violet/15 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-10 right-10 w-[350px] h-[350px] bg-neon-cyan/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
+          
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 bg-purple-500/10 border border-purple-500/30 px-3.5 py-1 rounded-full animate-in fade-in">
+              <span className="material-symbols-rounded text-neon-cyan text-[16px] animate-pulse">menu_book</span>
+              <span className="text-[11px] font-mono font-bold text-neon-cyan uppercase tracking-widest">Official Companion Handbook • Free E-Book</span>
+            </div>
+            
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-[0.95]">
+              WHAT WAS IN <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan via-purple-300 to-ultra-violet">THAT JOINT BRO!?</span>
+            </h2>
+            
+            <p className="text-gray-300 text-base md:text-lg font-medium leading-relaxed">
+              An Introduction To The Purple Canary Protocol <span className="text-gray-400 font-mono text-sm block sm:inline mt-1 sm:mt-0 sm:ml-2">— by Michael Scott Hoyt</span>
+            </p>
+            <p className="text-gray-400 text-xs md:text-sm font-mono max-w-2xl mx-auto">
+              The unredacted open-source guide to decentralized chemical harm reduction, paper chromatography, and street drug checking. 100% free, copyleft, and built for everyone.
+            </p>
+          </div>
+
+          {/* Grid: Book Showcase & Content Features */}
+          <div className="grid lg:grid-cols-12 gap-10 items-stretch">
+            
+            {/* Left: 3D Book Cover Card (lg:col-span-5) */}
+            <div className="lg:col-span-5 flex flex-col justify-between bg-gradient-to-br from-white/10 via-[#1e0836]/80 to-black/90 border border-white/15 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-[0_15px_45px_rgba(0,0,0,0.6)] group hover:border-neon-cyan/40 transition-all duration-500">
+              
+              <div>
+                {/* Book Badge & License */}
+                <div className="flex justify-between items-center text-[10px] font-mono text-gray-400 uppercase tracking-widest pb-4 border-b border-white/10 mb-6">
+                  <span className="text-neon-cyan font-bold flex items-center gap-1">
+                    <span className="material-symbols-rounded text-[14px]">lock_open</span>
+                    KOPIMI 🄯 2026
+                  </span>
+                  <span className="px-2 py-0.5 rounded bg-purple-900/60 text-purple-200 border border-purple-700/50">OPEN ACCESS</span>
+                </div>
+
+                {/* Simulated Book Cover Object */}
+                <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[320px] aspect-[1/1.42] rounded-2xl bg-gradient-to-br from-[#1e0836] via-[#10031c] to-[#05010a] p-6 border-2 border-purple-500/40 shadow-[0_20px_50px_rgba(143,0,255,0.35)] flex flex-col justify-between overflow-hidden group-hover:scale-[1.02] group-hover:border-neon-cyan/50 transition-all duration-500">
+                  {/* Subtle Spine Accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-purple-900/80 to-transparent border-r border-white/10"></div>
+                  <div className="absolute -right-16 -top-16 w-36 h-36 bg-neon-cyan/20 rounded-full blur-2xl"></div>
+
+                  {/* Cover Header */}
+                  <div className="pl-3 relative z-10">
+                    <div className="flex items-center gap-2 mb-3">
+                      <img 
+                        src="https://i.ibb.co/C3Jc6MKH/Gemini-Generated-Image-p4r67dp4r67dp4r6-removebg-preview.png" 
+                        alt="Logo" 
+                        className="w-7 h-7 rounded bg-gray-900/80 border border-white/20 p-0.5"
+                      />
+                      <span className="text-[9px] font-mono text-purple-300 uppercase tracking-wider font-bold">Purple Canary Protocol</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-gray-400 uppercase tracking-widest">Field Manual v1.0</div>
+                  </div>
+
+                  {/* Cover Main Title */}
+                  <div className="pl-3 relative z-10 my-auto py-2">
+                    <h3 className="text-2xl sm:text-3xl font-black italic text-white uppercase tracking-tight leading-[0.95] drop-shadow-lg">
+                      WHAT WAS IN <br/>
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-cyan to-ultra-violet">THAT JOINT BRO!?</span>
+                    </h3>
+                    <div className="h-0.5 w-12 bg-neon-cyan my-2"></div>
+                    <p className="text-[11px] font-mono text-gray-300">An Introduction To The Purple Canary Protocol</p>
+                  </div>
+
+                  {/* Cover Footer */}
+                  <div className="pl-3 relative z-10 pt-3 border-t border-white/10 flex justify-between items-end">
+                    <div>
+                      <div className="text-[9px] font-mono text-gray-400 uppercase">Author</div>
+                      <div className="text-xs font-bold text-white tracking-wide">Michael Scott Hoyt</div>
+                    </div>
+                    <div className="text-[9px] font-mono text-canary-400 bg-canary-400/10 px-2 py-0.5 rounded border border-canary-400/30">
+                      OCTOBER 2026
+                    </div>
+                  </div>
+                </div>
+
+                {/* Author Quote */}
+                <div className="mt-6 p-4 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs italic text-purple-200/90 leading-relaxed font-mono">
+                  &ldquo;Forensic parity is not a privilege reserved for state crime labs; it is an epistemic right of the person deciding what enters their own body.&rdquo;
+                  <span className="block not-italic text-[10px] text-gray-400 mt-1 font-sans font-semibold">— Michael Scott Hoyt</span>
+                </div>
+              </div>
+
+              {/* CTAs */}
+              <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+                <a 
+                  href="https://book.purplecanarylab.com/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-neon-cyan via-purple-300 to-ultra-violet text-black font-black uppercase tracking-wider text-xs sm:text-sm rounded-xl shadow-[0_0_25px_rgba(0,255,255,0.4)] hover:shadow-[0_0_35px_rgba(0,255,255,0.7)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                >
+                  <span className="material-symbols-rounded text-[20px]">auto_stories</span>
+                  <span>Read Free in E-Reader</span>
+                  <span className="material-symbols-rounded text-[18px]">open_in_new</span>
+                </a>
+
+                {/* Direct File Download Formats */}
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <span className="text-[10px] font-mono text-gray-400 uppercase tracking-widest mr-1">Download:</span>
+                  <a 
+                    href="https://book.purplecanarylab.com/WHAT_WAS_IN_THAT_JOINT_BRO.pdf" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 rounded bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/60 text-[10px] font-mono font-bold transition flex items-center gap-1"
+                    title="Download PDF Version"
+                  >
+                    <span className="material-symbols-rounded text-[12px]">download</span> PDF
+                  </a>
+                  <a 
+                    href="https://book.purplecanarylab.com/WHAT_WAS_IN_THAT_JOINT_BRO.epub" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-800/60 text-[10px] font-mono font-bold transition flex items-center gap-1"
+                    title="Download EPUB Version"
+                  >
+                    <span className="material-symbols-rounded text-[12px]">download</span> EPUB
+                  </a>
+                  <a 
+                    href="https://book.purplecanarylab.com/WHAT_WAS_IN_THAT_JOINT_BRO.compiled.md" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 rounded bg-blue-950/60 hover:bg-blue-900/80 text-blue-300 border border-blue-800/60 text-[10px] font-mono font-bold transition flex items-center gap-1"
+                    title="Download Markdown Version"
+                  >
+                    <span className="material-symbols-rounded text-[12px]">download</span> MD
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right: 4 Chapters/Highlights Breakdown (lg:col-span-7) */}
+            <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
+              
+              <div className="grid sm:grid-cols-2 gap-4">
+                
+                {/* Feature 1 */}
+                <div className="bg-white/5 border border-white/10 hover:border-neon-cyan/40 p-5 rounded-2xl transition-all duration-300 hover:bg-white/[0.07] group">
+                  <div className="w-10 h-10 rounded-xl bg-neon-cyan/10 border border-neon-cyan/20 flex items-center justify-center mb-3 text-neon-cyan group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-rounded text-[22px]">science</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-neon-cyan uppercase tracking-wider mb-1">Part 1 • For Everyone</div>
+                  <h4 className="text-base font-black text-white uppercase italic tracking-tight mb-1.5">Kitchen-Table Forensics</h4>
+                  <p className="text-xs text-gray-400 font-mono leading-relaxed">
+                    Demystifying chromatography. Learn how to separate adulterants using a travel thermos, Whatman paper strips, and a 365nm UV keychain light.
+                  </p>
+                </div>
+
+                {/* Feature 2 */}
+                <div className="bg-white/5 border border-white/10 hover:border-ultra-violet/40 p-5 rounded-2xl transition-all duration-300 hover:bg-white/[0.07] group">
+                  <div className="w-10 h-10 rounded-xl bg-ultra-violet/10 border border-ultra-violet/20 flex items-center justify-center mb-3 text-ultra-violet group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-rounded text-[22px]">warning</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-purple-300 uppercase tracking-wider mb-1">Threat Analysis</div>
+                  <h4 className="text-base font-black text-white uppercase italic tracking-tight mb-1.5">The Adulterant Era</h4>
+                  <p className="text-xs text-gray-400 font-mono leading-relaxed">
+                    Unmasking synthetic cannabinoids (SCRAs), fentanyl cross-contamination, xylazine (&ldquo;tranq&rdquo;), and hazardous bulking oils before consumption.
+                  </p>
+                </div>
+
+                {/* Feature 3 */}
+                <div className="bg-white/5 border border-white/10 hover:border-green-400/40 p-5 rounded-2xl transition-all duration-300 hover:bg-white/[0.07] group">
+                  <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center mb-3 text-green-400 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-rounded text-[22px]">checklist</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-green-400 uppercase tracking-wider mb-1">The Full SOP</div>
+                  <h4 className="text-base font-black text-white uppercase italic tracking-tight mb-1.5">Open Chemical Blueprint</h4>
+                  <p className="text-xs text-gray-400 font-mono leading-relaxed">
+                    The complete recipe: 95.5% D-limonene and 0.5% curcumin dye solvent formulation. Zero proprietary lock-in and zero corporate secrets.
+                  </p>
+                </div>
+
+                {/* Feature 4 */}
+                <div className="bg-white/5 border border-white/10 hover:border-yellow-400/40 p-5 rounded-2xl transition-all duration-300 hover:bg-white/[0.07] group">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center mb-3 text-yellow-400 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-rounded text-[22px]">diversity_3</span>
+                  </div>
+                  <div className="text-[10px] font-mono text-yellow-400 uppercase tracking-wider mb-1">Part 2 • For Agencies</div>
+                  <h4 className="text-base font-black text-white uppercase italic tracking-tight mb-1.5">Harm Reduction Blueprint</h4>
+                  <p className="text-xs text-gray-400 font-mono leading-relaxed">
+                    Tactical deployment guide for outreach vans, syringe services, and mutual-aid crews. Training guides and the math behind 0.167¢ tests.
+                  </p>
+                </div>
+
+              </div>
+
+              {/* Live Reader Features Banner */}
+              <div className="bg-gradient-to-r from-purple-950/40 via-deep-indigo/60 to-black/80 border border-purple-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-xl bg-neon-cyan/20 border border-neon-cyan/30 flex items-center justify-center text-neon-cyan shrink-0">
+                    <span className="material-symbols-rounded text-[24px]">devices</span>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-white uppercase tracking-tight">Interactive E-Reader Features</h5>
+                    <p className="text-[11px] font-mono text-gray-400">
+                      Full-text search, keyboard navigation (T, Cmd+K, Arrow Keys), KaTeX equations, and live reading progress.
+                    </p>
+                  </div>
+                </div>
+                <a 
+                  href="https://book.purplecanarylab.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold transition border border-white/20 hover:border-neon-cyan"
+                >
+                  <span>Launch Reader</span>
+                  <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
+                </a>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
       </section>
 
       {/* --- SECTION 5: SOCIAL PROOF / AUTHORITY --- */}
@@ -591,7 +829,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <span className="text-lg font-black text-white italic uppercase tracking-tighter">Purple Canary</span>
          </div>
          
-         <div className="flex justify-center gap-6 text-xs text-gray-500 font-mono uppercase tracking-widest mb-8">
+         <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-gray-500 font-mono uppercase tracking-widest mb-8">
+            <a 
+               href="https://book.purplecanarylab.com/" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               className="hover:text-neon-cyan transition-colors flex items-center gap-1.5 text-purple-300 hover:underline"
+            >
+               <span className="material-symbols-rounded text-[14px]">menu_book</span>
+               <span>Free E-Book: What Was In That Joint Bro!?</span>
+               <span className="material-symbols-rounded text-[12px] opacity-70">open_in_new</span>
+            </a>
+            <span className="text-gray-700 hidden sm:inline">•</span>
             <button onClick={() => setShowPrivacy(true)} className="hover:text-neon-cyan transition-colors">Privacy Policy</button>
          </div>
 

@@ -71,4 +71,9 @@
 20. **Netlify Next.js Runtime Configuration**:
     - Created `netlify.toml` configuring the Next.js runtime plugin (`@netlify/plugin-nextjs`) and build command (`pnpm build`).
     - Added `@netlify/plugin-nextjs` to `devDependencies` in `package.json` and updated `pnpm-lock.yaml`.
+21. **Official E-Book Section ("What Was In That Joint Bro!?")**:
+    - Integrated a dedicated high-impact showcase section (Section 4.5) on the homepage (`LandingPage.tsx`) featuring the new free ebook: *"What Was In That Joint Bro!? — An Introduction To The Purple Canary Protocol"* by Michael Scott Hoyt hosted at `https://book.purplecanarylab.com/`.
+    - Features a 3D-styled cybernetic book cover simulation with Kopimi 🄯 2026 open access licensing, author quote, direct CTA to the interactive web E-Reader, and instant download badges for PDF, EPUB, and Markdown formats.
+    - Includes 4 content cards outlining kitchen-table chromatography, the adulterant era (SCRAs, fentanyl, tranq/xylazine), the open 95.5% D-limonene/curcumin chemical blueprint SOP, and harm reduction agency deployment blueprints.
+    - Added quick-access E-Book links in the top navigation header and footer of `LandingPage.tsx`, as well as within the system navigation menu (`MenuModal.tsx`).
 

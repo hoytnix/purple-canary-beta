@@ -76,6 +76,25 @@ export const MenuModal: React.FC<MenuModalProps> = ({ onClose, onOpenSOP, onOpen
           </div>
         </button>
 
+        {/* Companion E-Book */}
+        <a 
+          href="https://book.purplecanarylab.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full p-4 bg-gradient-to-r from-deep-indigo to-[#2e1065] border border-white/10 rounded-2xl flex items-center gap-4 group hover:border-neon-cyan/50 transition-all active:scale-[0.98]"
+        >
+          <div className="p-3 bg-neon-cyan/10 rounded-xl text-neon-cyan group-hover:bg-neon-cyan group-hover:text-deep-indigo transition-colors">
+            <span className="material-symbols-rounded text-[24px]">menu_book</span>
+          </div>
+          <div className="text-left flex-1 min-w-0">
+            <div className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-1.5">
+              <span>Companion E-Book</span>
+              <span className="material-symbols-rounded text-[14px] text-gray-400 group-hover:text-neon-cyan">open_in_new</span>
+            </div>
+            <div className="text-[10px] font-mono text-gray-400 group-hover:text-gray-300 truncate">What Was In That Joint Bro!?</div>
+          </div>
+        </a>
+
         {/* Admin Console (Elevated Clearance) */}
         {isAdmin && (
           <button 
