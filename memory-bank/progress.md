@@ -89,6 +89,11 @@
 - [x] Integrated navigation links in the header navbar, footer, and `MenuModal.tsx`.
 - [x] Verified responsiveness down to 375px viewports and confirmed clean Next.js production build (`pnpm build`).
 
+### 13. Telemetry & Analytics
+- [x] Installed `@vercel/analytics` via `pnpm i @vercel/analytics`.
+- [x] Added `<Analytics />` from `@vercel/analytics/next` to the root application layout `app/layout.tsx`.
+
+
 
 ---
 

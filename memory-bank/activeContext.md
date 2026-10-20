@@ -76,4 +76,7 @@
     - Features a 3D-styled cybernetic book cover simulation with Kopimi 🄯 2026 open access licensing, author quote, direct CTA to the interactive web E-Reader, and instant download badges for PDF, EPUB, and Markdown formats.
     - Includes 4 content cards outlining kitchen-table chromatography, the adulterant era (SCRAs, fentanyl, tranq/xylazine), the open 95.5% D-limonene/curcumin chemical blueprint SOP, and harm reduction agency deployment blueprints.
     - Added quick-access E-Book links in the top navigation header and footer of `LandingPage.tsx`, as well as within the system navigation menu (`MenuModal.tsx`).
+22. **Vercel Analytics Integration**:
+    - Installed `@vercel/analytics` package via `pnpm i @vercel/analytics`.
+    - Integrated `<Analytics />` from `@vercel/analytics/next` into the root layout (`app/layout.tsx`).
 

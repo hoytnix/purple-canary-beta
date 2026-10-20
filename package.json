@@ -15,6 +15,7 @@
     "@libsql/client": "^0.18.0",
     "@tensorflow/tfjs": "4.17.0",
     "@tensorflow/tfjs-backend-wasm": "4.17.0",
+    "@vercel/analytics": "^2.0.1",
     "dotenv": "^18.0.3",
     "drizzle-orm": "^0.45.3",
     "jspdf": "2.5.1",
