@@ -79,4 +79,10 @@
 22. **Vercel Analytics Integration**:
     - Installed `@vercel/analytics` package via `pnpm i @vercel/analytics`.
     - Integrated `<Analytics />` from `@vercel/analytics/next` into the root layout (`app/layout.tsx`).
+23. **Rich Metadata, JSON-LD, Robots.txt & LLMs.txt**:
+    - Crafted comprehensive `public/llms.txt` following the LLMs.txt standard with in-depth technical, chemical, and protocol breakdowns crediting parent organization **TehWiz Productions** (`https://tehwiz.com`).
+    - Created cybernetic `public/robots.txt` granting explicit crawler access for AI search agents (GPTBot, ClaudeBot, PerplexityBot, Applebot-Extended, etc.) while shielding sensitive internal administrative and API routes (`/admin`, `/api/`).
+    - Added structured JSON-LD Schema.org graph in `app/layout.tsx` defining `Organization` (TehWiz Productions), `WebApplication` (Purple Canary), `WebSite`, and `Book` (*What Was In That Joint Bro!?*).
+    - Enriched Next.js App Router root layout `metadata` with OpenGraph, Twitter cards, keywords, and TehWiz Productions authorship.
+    - Updated `LandingPage.tsx` footer attributing Purple Canary as a project by TehWiz Productions.
 

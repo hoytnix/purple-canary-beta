@@ -93,6 +93,14 @@
 - [x] Installed `@vercel/analytics` via `pnpm i @vercel/analytics`.
 - [x] Added `<Analytics />` from `@vercel/analytics/next` to the root application layout `app/layout.tsx`.
 
+### 14. Rich Metadata, JSON-LD, Robots.txt & LLMs.txt
+- [x] Authored comprehensive `public/llms.txt` following the LLMs.txt standard with full technical, architectural, and chemical documentation crediting TehWiz Productions (`tehwiz.com`).
+- [x] Created cybernetic `public/robots.txt` supporting modern AI search crawlers (GPTBot, ClaudeBot, PerplexityBot, etc.) while safeguarding administrative endpoints.
+- [x] Embedded Schema.org JSON-LD `@graph` in `app/layout.tsx` representing TehWiz Productions (`Organization`), Purple Canary (`WebApplication` and `WebSite`), and companion e-book (`Book`).
+- [x] Expanded Next.js App Router root layout `metadata` with OpenGraph, Twitter cards, keywords, and organization provenance.
+- [x] Added project attribution to TehWiz Productions in `LandingPage.tsx` footer.
+
+
 
 
 ---

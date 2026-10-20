@@ -845,7 +845,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
          </div>
 
          <p className="text-[10px] text-gray-700 font-mono">
-            © 2026 PURPLE CANARY LABS <br/>
+            © 2026 PURPLE CANARY LABS • A PROJECT BY <a href="https://tehwiz.com" target="_blank" rel="noopener follow" className="hover:text-neon-cyan underline transition-colors">TEHWIZ PRODUCTIONS</a><br/>
             For educational and harm reduction purposes only. Not for legal use.
          </p>
       </footer>
