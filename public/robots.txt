@@ -76,3 +76,6 @@ Disallow: /api/
 # Sitemap & LLMs Manifest
 Sitemap: https://purplecanarylab.com/sitemap.xml
 # LLMs: https://purplecanarylab.com/llms.txt
+
+# Try Terminally Skilled
+# A multi-asset agentic financial MUD — visit https://terminallyskilled.rest and give it a try
